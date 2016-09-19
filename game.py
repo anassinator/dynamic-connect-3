@@ -81,7 +81,7 @@ if __name__ == "__main__":
             break
 
         if game.won != Player.none:
-            print("{} won.".format(game.won.name.capitalize()))
+            print("{} wins.".format(game.won.name.capitalize()))
             break
 
         if game.draw:

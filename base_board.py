@@ -102,6 +102,37 @@ class Board(object, metaclass=ABCMeta):
             self._white_pieces &= ~(1 << index)
             self._black_pieces &= ~(1 << index)
 
+    def available_moves(self, player: Player):
+        """Yields all available moves for a given player.
+        
+        Args:
+            player: Player to get available moves for.
+
+        Yields:
+            All available moves for a given player.
+        """
+        pieces = 0
+        if player == Player.white:
+            pieces = self._white_pieces
+        elif player == Player.black:
+            pieces = self._black_pieces
+        else:
+            raise ValueError("Only white and black players can move")
+
+        max_width, max_height = self.WIDTH - 1, self.HEIGHT - 1
+        for x in range(self.WIDTH):
+            for y in range(self.HEIGHT):
+                index = x + y * self.WIDTH
+                if (pieces >> index) & 1:
+                    if x != 0 and self.get(x - 1, y) == Player.none:
+                        yield Move(x, y, Direction.west)
+                    if x != max_width and self.get(x + 1, y) == Player.none:
+                        yield Move(x, y, Direction.east)
+                    if y != 0 and self.get(x, y - 1) == Player.none:
+                        yield Move(x, y, Direction.north)
+                    if y != max_height and self.get(x, y + 1) == Player.none:
+                        yield Move(x, y, Direction.south)
+
     def move(self, move: Move):
         """Moves a piece on the board in place.
         
