@@ -3,6 +3,7 @@
 
 from board import SmallBoard
 from base_board import Board, Player
+from draw_tracker import DrawTracker
 from move import Move, Direction, InvalidMove
 
 class Game(object):
@@ -13,17 +14,26 @@ class Game(object):
         board: Current board state.
         turn: Current player.
         won: Which player won.
+        draw: Whether the game ended in a draw or not.
     """
 
-    def __init__(self, board: Board):
+    def __init__(self, board: Board, draw_tracker: DrawTracker=None):
         """Constructs a Game instance from a given starting position.
         
         Args:
             board: Starting board position.
+            draw_tracker: Draw tracker to start with.
         """
         self.board = board
         self.turn = Player.white
         self.won = Player.none
+        self.draw = False
+
+        if draw_tracker is None:
+            self._draw_tracker = DrawTracker()
+            self._draw_tracker.update(self.board, self.turn)
+        else:
+            self._draw_tracker = draw_tracker
 
     def play(self, move: Move):
         """Plays a given move and switches to next player's turn.
@@ -39,6 +49,7 @@ class Game(object):
             self.won = self.turn
 
         self.turn = Player(not self.turn.value)
+        self.draw = self._draw_tracker.update(self.board, self.turn)
 
 
 if __name__ == "__main__":
@@ -59,5 +70,9 @@ if __name__ == "__main__":
 
         if game.won != Player.none:
             print("{} won.".format(game.won.name.capitalize()))
-            break;
+            break
+
+        if game.draw:
+            print("Draw.")
+            break
 
