@@ -2,6 +2,7 @@
 
 import numpy as np
 from enum import Enum
+from abc import ABCMeta, abstractmethod
 from move import Direction, InvalidMove
 
 
@@ -14,7 +15,7 @@ class Player(Enum):
     black = 1
 
 
-class Board(object):
+class Board(object, metaclass=ABCMeta):
 
     """Game board.
     
@@ -39,7 +40,7 @@ class Board(object):
         """
         self.width = width
         self.height = height
-        if cells:
+        if cells is not None:
             self.cells = cells
         else:
             self.cells = np.zeros((width, height), dtype=np.int8)
@@ -50,6 +51,7 @@ class Board(object):
     def __str__(self):
         """Returns a string representation of the game board."""
         s = ""
+        Board(3, 2)
         for y in range(self.height):
             for x in range(self.width):
                 cell = self.cells[x][y]
@@ -68,23 +70,19 @@ class Board(object):
 
         return s
 
-    @classmethod
-    def _from_cells(cls, cells):
-        """Constructs a Board from a copy of the raw cells.
-
-        Args:
-            cells: Array of the game board's cells.
-
-        Returns:
-            Board.
-        """
-        width, height = cells.shape
-        board = Board(width, height, cells.copy())
-        return board
-
+    @abstractmethod
     def copy(self):
         """Returns a deep copy of the board."""
-        return self._from_cells(self.cells)
+        raise NotImplementedError
+
+    @abstractmethod
+    def is_goal(self, player):
+        """Returns whether the current board is the given player's goal or not.
+
+        Args:
+            player: Player to check for.
+        """
+        raise NotImplementedError
 
     def get(self, x, y):
         """Returns the occupancy of the <x, y> cell.
@@ -99,7 +97,7 @@ class Board(object):
             Player.black.value if it's occupied by a black piece.
         """
         return self.cells[x][y]
-
+        
     def set(self, x, y, value):
         """Sets the occupancy of the <x, y> cell.
 
@@ -146,42 +144,67 @@ class SmallBoard(Board):
 
     """A 5x4 game board."""
 
-    def __init__(self):
+    def __init__(self, cells=None):
         """Constructs a SmallBoard with all pieces in the correct starting
         position.."""
-        super(SmallBoard, self).__init__(5, 4)
+        super().__init__(5, 4, cells)
 
-        # Add white pieces.
-        self.set(0, 0, Player.white.value)
-        self.set(0, 2, Player.white.value)
-        self.set(4, 1, Player.white.value)
-        self.set(4, 3, Player.white.value)
+        if cells is None:
+            # Add white pieces.
+            self.set(0, 0, Player.white.value)
+            self.set(0, 2, Player.white.value)
+            self.set(4, 1, Player.white.value)
+            self.set(4, 3, Player.white.value)
 
-        # Add black pieces.
-        self.set(0, 1, Player.black.value)
-        self.set(0, 3, Player.black.value)
-        self.set(4, 0, Player.black.value)
-        self.set(4, 2, Player.black.value)
+            # Add black pieces.
+            self.set(0, 1, Player.black.value)
+            self.set(0, 3, Player.black.value)
+            self.set(4, 0, Player.black.value)
+            self.set(4, 2, Player.black.value)
+
+    def copy(self):
+        """Returns a deep copy of the board."""
+        return SmallBoard(self.cells.copy())
+
+    def is_goal(self, player):
+        """Returns whether the current board is the given player's goal or not.
+
+        Args:
+            player: Player to check for.
+        """
+        raise NotImplementedError
 
 
 class LargeBoard(Board):
 
     """A 7x6 game board."""
 
-    def __init__(self):
+    def __init__(self, cells=None):
         """Constructs a LargeBoard with all pieces in the correct starting
         position.."""
-        super(LargeBoard, self).__init__(7, 6)
+        super().__init__(7, 6, cells)
 
-        # Add white pieces.
-        self.set(0, 1, Player.white.value)
-        self.set(0, 3, Player.white.value)
-        self.set(6, 2, Player.white.value)
-        self.set(6, 4, Player.white.value)
+        if cells is None:
+            # Add white pieces.
+            self.set(0, 1, Player.white.value)
+            self.set(0, 3, Player.white.value)
+            self.set(6, 2, Player.white.value)
+            self.set(6, 4, Player.white.value)
 
-        # Add black pieces.
-        self.set(0, 2, Player.black.value)
-        self.set(0, 4, Player.black.value)
-        self.set(6, 1, Player.black.value)
-        self.set(6, 3, Player.black.value)
+            # Add black pieces.
+            self.set(0, 2, Player.black.value)
+            self.set(0, 4, Player.black.value)
+            self.set(6, 1, Player.black.value)
+            self.set(6, 3, Player.black.value)
 
+    def copy(self):
+        """Returns a deep copy of the board."""
+        return LargeBoard(self.cells.copy())
+
+    def is_goal(self, player):
+        """Returns whether the current board is the given player's goal or not.
+
+        Args:
+            player: Player to check for.
+        """
+        raise NotImplementedError
