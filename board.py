@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import numpy as np
 from enum import Enum
 from abc import ABCMeta, abstractmethod
 from move import Direction, Move, InvalidMove
@@ -22,7 +21,6 @@ class Board(object, metaclass=ABCMeta):
     Attributes:
         width: Width of the board in number of cells.
         height: Height of the board in number of cells.
-        cells: Array of the game board's cells.
 
     Cell values are defined such that:
         Player.none.value: Empty cell.
@@ -30,35 +28,30 @@ class Board(object, metaclass=ABCMeta):
         Player.black.value: Cell occupied by black piece.
     """
 
-    def __init__(self, width: int, height: int, cells=None):
+    def __init__(self, width: int, height: int):
         """Constructs a Board with the specified width and height.
         
         Args:
             width: Width in number of cells.
             height: Height in number of cells.
-            cells: Predetermined cells.
+            cells: Array of the game board's cells.
         """
         self.width = width
         self.height = height
-        if cells is not None:
-            self.cells = cells
-        else:
-            self.cells = np.zeros((width, height), dtype=np.int8)
-            for x in range(width):
-                for y in range(height):
-                    self.cells[x][y] = Player.none.value
+        self._white_pieces = 0
+        self._black_pieces = 0
 
     def __str__(self):
         """Returns a string representation of the game board."""
         s = ""
         for y in range(self.height):
             for x in range(self.width):
-                cell = self.cells[x][y]
-                if cell == Player.none.value:
+                cell = self.get(x, y)
+                if cell == Player.none:
                     s += ' '
-                elif cell == Player.white.value:
+                elif cell == Player.white:
                     s += '■'
-                elif cell == Player.black.value:
+                elif cell == Player.black:
                     s += '□'
 
                 if x != self.width - 1:
@@ -91,21 +84,36 @@ class Board(object, metaclass=ABCMeta):
             y: Vertical index on the board.
         
         Returns:
-            Player.none.value if the cell is empty,
-            Player.white.value if it's occupied by a white piece, and
-            Player.black.value if it's occupied by a black piece.
+            Player.none if the cell is empty,
+            Player.white if it's occupied by a white piece, and
+            Player.black if it's occupied by a black piece.
         """
-        return self.cells[x][y]
+        index = x + y * self.width
+        if (self._white_pieces >> index) & 1:
+            return Player.white
+        elif (self._black_pieces >> index) & 1:
+            return Player.black
+        else:
+            return Player.none
         
-    def set(self, x: int, y: int, value: int):
+    def set(self, x: int, y: int, player: Player):
         """Sets the occupancy of the <x, y> cell.
 
         Args:
             x: Horizontal index on the board.
             y: Vertical index on the board.
-            value: Occupancy of the cell.
+            player: Player.
         """
-        self.cells[x][y] = value
+        index = x + y * self.width
+        if player == Player.white:
+            self._white_pieces |= 1 << index
+            self._black_pieces &= ~(1 << index)
+        elif player == Player.black:
+            self._white_pieces &= ~(1 << index)
+            self._black_pieces |= 1 << index
+        else:
+            self._white_pieces &= ~(1 << index)
+            self._black_pieces &= ~(1 << index)
 
     def move(self, move: Move):
         """Moves a piece on the board in place.
@@ -116,7 +124,7 @@ class Board(object, metaclass=ABCMeta):
         current_cell = self.get(move.x, move.y)
 
         # Check if valid.
-        if current_cell == Player.none.value:
+        if current_cell == Player.none:
             raise InvalidMove("Cell cannot be empty")
         if move.x == 0 and move.direction == Direction.west:
             raise InvalidMove("Reached left edge of board")
@@ -128,7 +136,7 @@ class Board(object, metaclass=ABCMeta):
             raise InvalidMove("Reached bottom edge of board")
 
         # Move.
-        self.set(move.x, move.y, Player.none.value)
+        self.set(move.x, move.y, Player.none)
         if move.direction == Direction.north:
             self.set(move.x, move.y - 1, current_cell)
         elif move.direction == Direction.south:
@@ -143,31 +151,37 @@ class SmallBoard(Board):
 
     """A 5x4 game board."""
 
-    def __init__(self, cells=None):
+    def __init__(self, _white_pieces: int=None, _black_pieces: int=None):
         """Constructs a SmallBoard with all pieces in the correct starting
         position.
-        
+
         Args:
-            cells: Array of the game board's cells.
+            _white_pieces: White pieces copy.
+            _black_pieces: Black pieces copy.
         """
-        super().__init__(5, 4, cells)
+        super().__init__(5, 4)
 
-        if cells is None:
-            # Add white pieces.
-            self.set(0, 0, Player.white.value)
-            self.set(0, 2, Player.white.value)
-            self.set(4, 1, Player.white.value)
-            self.set(4, 3, Player.white.value)
+        # Add white pieces.
+        if _white_pieces is None:
+            self.set(0, 0, Player.white)
+            self.set(0, 2, Player.white)
+            self.set(4, 1, Player.white)
+            self.set(4, 3, Player.white)
+        else:
+            self._white_pieces = _white_pieces
 
-            # Add black pieces.
-            self.set(0, 1, Player.black.value)
-            self.set(0, 3, Player.black.value)
-            self.set(4, 0, Player.black.value)
-            self.set(4, 2, Player.black.value)
+        # Add black pieces.
+        if _black_pieces is None:
+            self.set(0, 1, Player.black)
+            self.set(0, 3, Player.black)
+            self.set(4, 0, Player.black)
+            self.set(4, 2, Player.black)
+        else:
+            self._black_pieces = _black_pieces
 
     def copy(self) -> "SmallBoard":
         """Returns a deep copy of the board."""
-        return SmallBoard(self.cells.copy())
+        return SmallBoard(self._white_pieces, self._black_pieces)
 
     def is_goal(self, player: Player) -> bool:
         """Returns whether the current board is the given player's goal or not.
@@ -182,31 +196,37 @@ class LargeBoard(Board):
 
     """A 7x6 game board."""
 
-    def __init__(self, cells=None):
+    def __init__(self, _white_pieces: int=None, _black_pieces: int=None):
         """Constructs a LargeBoard with all pieces in the correct starting
         position.
-        
+
         Args:
-            cells: Array of the game board's cells.
+            _white_pieces: White pieces copy.
+            _black_pieces: Black pieces copy.
         """
-        super().__init__(7, 6, cells)
+        super().__init__(7, 6)
 
-        if cells is None:
-            # Add white pieces.
-            self.set(0, 1, Player.white.value)
-            self.set(0, 3, Player.white.value)
-            self.set(6, 2, Player.white.value)
-            self.set(6, 4, Player.white.value)
+        # Add white pieces.
+        if _white_pieces is None:
+            self.set(0, 1, Player.white)
+            self.set(0, 3, Player.white)
+            self.set(6, 2, Player.white)
+            self.set(6, 4, Player.white)
+        else:
+            self._white_pieces = _white_pieces
 
-            # Add black pieces.
-            self.set(0, 2, Player.black.value)
-            self.set(0, 4, Player.black.value)
-            self.set(6, 1, Player.black.value)
-            self.set(6, 3, Player.black.value)
+        # Add black pieces.
+        if _black_pieces is None:
+            self.set(0, 2, Player.black)
+            self.set(0, 4, Player.black)
+            self.set(6, 1, Player.black)
+            self.set(6, 3, Player.black)
+        else:
+            self._black_pieces = _black_pieces
 
     def copy(self) -> "LargeBoard":
         """Returns a deep copy of the board."""
-        return LargeBoard(self.cells.copy())
+        return LargeBoard(self._white_pieces, self._black_pieces)
 
     def is_goal(self, player: Player) -> bool:
         """Returns whether the current board is the given player's goal or not.
@@ -215,3 +235,4 @@ class LargeBoard(Board):
             player: Player to check for.
         """
         raise NotImplementedError
+
