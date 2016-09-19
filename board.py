@@ -3,7 +3,7 @@
 import numpy as np
 from enum import Enum
 from abc import ABCMeta, abstractmethod
-from move import Direction, InvalidMove
+from move import Direction, Move, InvalidMove
 
 
 class Player(Enum):
@@ -30,7 +30,7 @@ class Board(object, metaclass=ABCMeta):
         Player.black.value: Cell occupied by black piece.
     """
 
-    def __init__(self, width, height, cells=None):
+    def __init__(self, width: int, height: int, cells=None):
         """Constructs a Board with the specified width and height.
         
         Args:
@@ -51,7 +51,6 @@ class Board(object, metaclass=ABCMeta):
     def __str__(self):
         """Returns a string representation of the game board."""
         s = ""
-        Board(3, 2)
         for y in range(self.height):
             for x in range(self.width):
                 cell = self.cells[x][y]
@@ -71,12 +70,12 @@ class Board(object, metaclass=ABCMeta):
         return s
 
     @abstractmethod
-    def copy(self):
+    def copy(self) -> "Board":
         """Returns a deep copy of the board."""
         raise NotImplementedError
 
     @abstractmethod
-    def is_goal(self, player):
+    def is_goal(self, player: Player) -> bool:
         """Returns whether the current board is the given player's goal or not.
 
         Args:
@@ -84,7 +83,7 @@ class Board(object, metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    def get(self, x, y):
+    def get(self, x: int, y: int) -> int:
         """Returns the occupancy of the <x, y> cell.
         
         Args:
@@ -98,7 +97,7 @@ class Board(object, metaclass=ABCMeta):
         """
         return self.cells[x][y]
         
-    def set(self, x, y, value):
+    def set(self, x: int, y: int, value: int):
         """Sets the occupancy of the <x, y> cell.
 
         Args:
@@ -108,7 +107,7 @@ class Board(object, metaclass=ABCMeta):
         """
         self.cells[x][y] = value
 
-    def move(self, move):
+    def move(self, move: Move):
         """Moves a piece on the board in place.
         
         Args:
@@ -146,7 +145,11 @@ class SmallBoard(Board):
 
     def __init__(self, cells=None):
         """Constructs a SmallBoard with all pieces in the correct starting
-        position.."""
+        position.
+        
+        Args:
+            cells: Array of the game board's cells.
+        """
         super().__init__(5, 4, cells)
 
         if cells is None:
@@ -162,11 +165,11 @@ class SmallBoard(Board):
             self.set(4, 0, Player.black.value)
             self.set(4, 2, Player.black.value)
 
-    def copy(self):
+    def copy(self) -> "SmallBoard":
         """Returns a deep copy of the board."""
         return SmallBoard(self.cells.copy())
 
-    def is_goal(self, player):
+    def is_goal(self, player: Player) -> bool:
         """Returns whether the current board is the given player's goal or not.
 
         Args:
@@ -181,7 +184,11 @@ class LargeBoard(Board):
 
     def __init__(self, cells=None):
         """Constructs a LargeBoard with all pieces in the correct starting
-        position.."""
+        position.
+        
+        Args:
+            cells: Array of the game board's cells.
+        """
         super().__init__(7, 6, cells)
 
         if cells is None:
@@ -197,11 +204,11 @@ class LargeBoard(Board):
             self.set(6, 1, Player.black.value)
             self.set(6, 3, Player.black.value)
 
-    def copy(self):
+    def copy(self) -> "LargeBoard":
         """Returns a deep copy of the board."""
         return LargeBoard(self.cells.copy())
 
-    def is_goal(self, player):
+    def is_goal(self, player: Player) -> bool:
         """Returns whether the current board is the given player's goal or not.
 
         Args:

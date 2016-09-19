@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from board import SmallBoard, Player
+from board import Board, SmallBoard, Player
 from move import Move, Direction, InvalidMove
 
 class Game(object):
@@ -13,7 +13,7 @@ class Game(object):
         turn: Current player.
     """
 
-    def __init__(self, board):
+    def __init__(self, board: Board):
         """Constructs a Game instance from a given starting position.
         
         Args:
@@ -22,7 +22,7 @@ class Game(object):
         self.board = board
         self.turn = Player.white
 
-    def play(self, move):
+    def play(self, move: Move):
         """Plays a given move and switches to next player's turn.
         
         Args:
