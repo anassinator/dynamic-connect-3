@@ -51,6 +51,18 @@ class Game(object):
         self.turn = Player(not self.turn.value)
         self.draw = self._draw_tracker.update(self.board, self.turn)
 
+    def copy(self) -> "Game":
+        """Returns a deep copy of the game.
+
+        Returns:
+            A copy of the current game state.
+        """
+        game = Game(self.board.copy(), self._draw_tracker.copy())
+        game.turn = self.turn
+        game.won = self.won
+        game.draw = self.draw
+        return game
+
 
 if __name__ == "__main__":
     board = SmallBoard()
