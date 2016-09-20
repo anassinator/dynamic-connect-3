@@ -41,7 +41,10 @@ class Game(object):
         Args:
             move: Move to play.
         """
-        if self.board.get(move.x, move.y) == 1 - self.turn.value:
+        # Make sure it's the correct person's move.
+        # Empty cells raise an InvalidMove in self.board.move so deal with it
+        # there.
+        if self.board.get(move.x, move.y) not in (self.turn, Player.none):
             raise InvalidMove("Not your turn")
 
         self.board.move(move)
