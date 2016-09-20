@@ -12,9 +12,9 @@ class Game(object):
     
     Attributes:
         board: Current board state.
+        draw: Whether the game ended in a draw or not.
         turn: Current player.
         won: Which player won.
-        draw: Whether the game ended in a draw or not.
     """
 
     def __init__(self, board: Board, draw_tracker: DrawTracker=None):
@@ -67,12 +67,16 @@ class Game(object):
         return game
 
 
-if __name__ == "__main__":
-    board = SmallBoard()
+def pvp(board: Board):
+    """Starts a PvP game.
+    
+    Args:
+        board: Board to play on.
+    """
     game = Game(board)
     print(game.board)
 
-    while True:
+    while not game.draw and game.won == Player.none:
         try:
             s = "{}'s turn. Enter a move: ".format(game.turn.name.capitalize())
             move = Move.from_str(input(s))
@@ -83,11 +87,13 @@ if __name__ == "__main__":
         except (KeyboardInterrupt, EOFError):
             break
 
-        if game.won != Player.none:
-            print("{} wins.".format(game.won.name.capitalize()))
-            break
+    if game.won != Player.none:
+        print("{} wins.".format(game.won.name.capitalize()))
+    elif game.draw:
+        print("Draw.")
 
-        if game.draw:
-            print("Draw.")
-            break
+
+if __name__ == "__main__":
+    board = SmallBoard()
+    pvp(board)
 
