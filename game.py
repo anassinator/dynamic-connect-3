@@ -54,6 +54,9 @@ class Game(object):
         self.turn = Player(not self.turn.value)
         self.draw = self._draw_tracker.update(self.board, self.turn)
 
+        if self.won != Player.none or self.draw:
+            self.turn = Player.none
+
     def copy(self) -> "Game":
         """Returns a deep copy of the game.
 
@@ -76,7 +79,7 @@ def pvp(board: Board):
     game = Game(board)
     print(game.board)
 
-    while not game.draw and game.won == Player.none:
+    while game.turn != Player.none:
         try:
             s = "{}'s turn. Enter a move: ".format(game.turn.name.capitalize())
             move = Move.from_str(input(s))
