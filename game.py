@@ -68,35 +68,3 @@ class Game(object):
         game.won = self.won
         game.draw = self.draw
         return game
-
-
-def pvp(board: Board):
-    """Starts a PvP game.
-    
-    Args:
-        board: Board to play on.
-    """
-    game = Game(board)
-    print(game.board)
-
-    while game.turn != Player.none:
-        try:
-            s = "{}'s turn. Enter a move: ".format(game.turn.name.capitalize())
-            move = Move.from_str(input(s))
-            game.play(move)
-            print(game.board)
-        except InvalidMove as e:
-            print(e.message)
-        except (KeyboardInterrupt, EOFError):
-            break
-
-    if game.won != Player.none:
-        print("{} wins.".format(game.won.name.capitalize()))
-    elif game.draw:
-        print("Draw.")
-
-
-if __name__ == "__main__":
-    board = SmallBoard()
-    pvp(board)
-
