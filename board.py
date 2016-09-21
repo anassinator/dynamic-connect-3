@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from base_board import Board, Player
-from winning_boards import generate_winning_boards
+from streaking_boards import generate_winning_boards
 
 
 class SmallBoard(Board):
