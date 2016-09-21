@@ -59,7 +59,7 @@ def generate_streaking_boards(board_class: Type[Board], n: int):
     for x in range(width - n + 1):
         for t in _consecutive(range(height), n):
             board = board_class(0, 0)
-            for y in t:
+            for i, y in enumerate(t):
                  board.set(x + n - 1 - i, y, Player.white)
             states.add(board._white_pieces) 
 
