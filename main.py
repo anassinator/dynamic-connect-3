@@ -127,15 +127,18 @@ class PlayerVsAgentGameConnector(PlayerVsPlayerGameConnector):
 
     """Player vs agent game connector."""
 
-    def __init__(self, player: Player, heuristics: List[WeightedHeuristic]):
+    def __init__(self, player: Player, heuristics: List[WeightedHeuristic],
+                 timeout: int):
         """Constructs a PlayerVsAgentGameConnector.
 
         Args:
             player: Player for the agent to play as.
             heuristics: List of weighted heuristics to use.
+            timeout: Max timout for the agent to play in seconds.
         """
         self._agent_player = player
         self._heuristics = heuristics
+        self._timeout = timeout
 
     async def start(self, board: Board):
         """Starts a game asynchronously.
@@ -161,7 +164,7 @@ class PlayerVsAgentGameConnector(PlayerVsPlayerGameConnector):
         """
         if turn == self._agent_player:
             print("Thinking... ", end="")
-            move = self._agent.request_move()
+            move = self._agent.request_move(self._timeout)
             print(move)
         else:
             move = await super().yield_move(board, turn)
@@ -174,7 +177,8 @@ class AgentVsAgentGameConnector(GameConnector):
     """Agent vs agent game connector."""
 
     def __init__(self, white_heuristics: List[WeightedHeuristic],
-                 black_heuristics: List[WeightedHeuristic]):
+                 black_heuristics: List[WeightedHeuristic],
+                 timeout: int):
         """Constructs a AgentVsAgentGameConnector.
 
         Args:
@@ -182,9 +186,11 @@ class AgentVsAgentGameConnector(GameConnector):
                 player.
             black_heuristics: List of weighted heuristics to use by the black
                 player.
+            timeout: Max timeout for an agent to play in seconds.
         """
         self._white_heuristics = white_heuristics
         self._black_heuristics = black_heuristics
+        self._timeout = timeout
 
     async def start(self, board: Board):
         """Starts a game asynchronously.
@@ -211,9 +217,9 @@ class AgentVsAgentGameConnector(GameConnector):
         """
         print("Thinking... ", end="")
         if turn == Player.white:
-            move = self._white_agent.request_move()
+            move = self._white_agent.request_move(self._timeout)
         else:
-            move = self._black_agent.request_move()
+            move = self._black_agent.request_move(self._timeout)
 
         print(move)
         opponent = Player(1 - turn.value)
@@ -224,12 +230,14 @@ class AgentVsAgentGameConnector(GameConnector):
 
 if __name__ == "__main__":
     board = SmallBoard()
+    timeout = 3
+
     heuristics = [
         WeightedHeuristic(GoalHeuristic, 1),
         WeightedHeuristic(NumberOfRunsOfTwoHeuristic, 1)
     ]
 
-    connector = AgentVsAgentGameConnector(heuristics, heuristics)
+    connector = AgentVsAgentGameConnector(heuristics, heuristics, timeout)
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(connector.start(board))
