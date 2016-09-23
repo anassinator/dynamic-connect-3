@@ -5,8 +5,8 @@ import asyncio
 from board import SmallBoard
 from base_board import Player
 from typing import List, Tuple
-from game_connector import GameConnector
 from agent import Agent, HumanAgent, AutonomousAgent
+from game_connector import LocalGameConnector, RemoteGameConnector
 from heuristics import (WeightedHeuristic, GoalHeuristic,
                         NumberOfRunsOfTwoHeuristic)
 
@@ -70,11 +70,23 @@ def agent_vs_agent():
 
 if __name__ == "__main__":
     board = SmallBoard
-    timeout = 3
+    max_time = 3
+    local = False
 
-    white_agent, black_agent = agent_vs_agent()
-    connector = GameConnector(white_agent, black_agent, timeout)
+    hostname = "127.0.0.1"
+    port = 12345
+    player = Player.white
+    game_id = "game42"
 
     loop = asyncio.get_event_loop()
+
+    if local:
+        white_agent, black_agent = agent_vs_agent()
+        connector = LocalGameConnector(white_agent, black_agent, max_time)
+    else:
+        agent = AutonomousAgent(player, get_weighted_heuristics())
+        connector = RemoteGameConnector(agent, max_time, game_id, hostname,
+                                        port, loop)
+
     loop.run_until_complete(connector.start(board))
     loop.close()

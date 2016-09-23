@@ -71,7 +71,7 @@ class HumanAgent(Agent):
         """Yields a move to play.
         
         Args:
-            max_time: Max time to come up with a move in seconds.
+            max_time: Max time to come up with a move in seconds. Ignored.
 
         Returns:
             Move.
@@ -119,7 +119,6 @@ class AutonomousAgent(Agent):
         Raises:
             PlayerResigned: If the agent resigns.
         """
-        print("Thinking... ", end="")
         try:
             with timeout(max_time):
                 self._searcher.search(self._game.board.copy(), self._game.turn)
@@ -127,6 +126,4 @@ class AutonomousAgent(Agent):
             pass
 
         move = self._searcher.request_move()
-        print(move)
-
         return move
