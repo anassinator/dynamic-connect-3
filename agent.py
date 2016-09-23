@@ -128,6 +128,8 @@ class AutonomousAgent(Agent):
                 self._searcher.search(self._game.board.copy(), self._game.turn)
         except TimeoutError:
             pass
+        except KeyboardInterrupt:
+            raise PlayerResigned
 
         move = self._searcher.request_move()
         print(move)
