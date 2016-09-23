@@ -195,4 +195,3 @@ class MinimaxSearch(Search):
                 best_move = move
 
         return (best_move, best_value)
-
