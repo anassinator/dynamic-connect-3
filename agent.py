@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import sys
 from game import Game
-from move import Move
 from typing import List
 from timeout import timeout
 from search import MinimaxSearch
 from base_board import Board, Player
+from move import Move, PlayerResigned
 from abc import ABCMeta, abstractmethod
 from heuristics import WeightedHeuristic
 
@@ -119,6 +120,9 @@ class AutonomousAgent(Agent):
         Raises:
             PlayerResigned: If the agent resigns.
         """
+        print("Thinking... ", end="")
+        sys.stdout.flush()
+
         try:
             with timeout(max_time):
                 self._searcher.search(self._game.board.copy(), self._game.turn)
@@ -126,4 +130,6 @@ class AutonomousAgent(Agent):
             pass
 
         move = self._searcher.request_move()
+        print(move)
+
         return move

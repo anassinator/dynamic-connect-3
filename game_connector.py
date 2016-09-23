@@ -179,18 +179,12 @@ class LocalGameConnector(GameConnector):
         Returns:
             Move.
         """
-        print("Thinking... ", end="")
-        sys.stdout.flush()
-
         if turn == Player.white:
-            move = self._white_agent.yield_move(self._max_time)
+            return self._white_agent.yield_move(self._max_time)
         elif turn == Player.black:
-            move = self._black_agent.yield_move(self._max_time)
+            return self._black_agent.yield_move(self._max_time)
         else:
             raise NotImplementedError
-
-        print(move)
-        return move
 
     @asyncio.coroutine
     def on_successful_move(self, move: Move):
