@@ -138,7 +138,7 @@ class LocalGameConnector(GameConnector):
     """Local multi-agent game connector."""
 
     def __init__(self, white_agent: Agent, black_agent: Agent,
-                 max_time: float):
+                 max_time: int):
         """Constructs a GameConnector from two opposing agents.
         
         Args:
@@ -203,7 +203,7 @@ class RemoteGameConnector(GameConnector):
 
     BUFFERSIZE = 1024
 
-    def __init__(self, agent: Agent, max_time: float, game_id: str,
+    def __init__(self, agent: Agent, max_time: int, game_id: str,
                  hostname: str, port: int, loop: asyncio.AbstractEventLoop):
         """Constructs a RemoteGameConnector using given agent as a local player..
         

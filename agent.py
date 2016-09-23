@@ -48,7 +48,7 @@ class Agent(object, metaclass=ABCMeta):
         self._game.play(move)
 
     @abstractmethod
-    def yield_move(self, max_time: float) -> Move:
+    def yield_move(self, max_time: int) -> Move:
         """Yields a move to play.
         
         Args:
@@ -68,7 +68,7 @@ class HumanAgent(Agent):
         player: Acting player.
     """
     
-    def yield_move(self, max_time: float) -> Move:
+    def yield_move(self, max_time: int) -> Move:
         """Yields a move to play.
         
         Args:
@@ -108,7 +108,7 @@ class AutonomousAgent(Agent):
         self._heuristics = heuristics
         self._searcher = MinimaxSearch(player, heuristics)
 
-    def yield_move(self, max_time: float) -> Move:
+    def yield_move(self, max_time: int) -> Move:
         """Yields a move to play.
         
         Args:
