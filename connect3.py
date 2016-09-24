@@ -133,8 +133,7 @@ def parse_args():
     remote = subparsers.add_parser(
         "remote", help="play against a remote agent on a server")
     remote.add_argument("hostname", help="hostname of remote server")
-    remote.add_argument("port", type=int, default=12345,
-                        help="port of remote server")
+    remote.add_argument("port", type=int, help="port of remote server")
     remote.add_argument("id", help="game ID")
     add_shared_arguments(remote)
     remote.add_argument("--black", dest="player", const=Player.black,
