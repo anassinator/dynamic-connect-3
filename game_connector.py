@@ -235,10 +235,10 @@ class RemoteGameConnector(GameConnector):
         """
         self._agent.play(game.copy())
 
-        # Connect to remote server.
         print("Connecting... ", end="")
         sys.stdout.flush()
 
+        # Connect to remote server.
         transport = yield from asyncio.open_connection(self._hostname,
                                                        self._port,
                                                        loop=self._loop)
@@ -277,9 +277,13 @@ class RemoteGameConnector(GameConnector):
             self._writer.write(encoded_move)
             yield from self._reader.read(self.BUFFERSIZE)
         else:
+            print("Waiting for move... ", end="")
+            sys.stdout.flush()
+
             encoded_move = yield from self._reader.read(self.BUFFERSIZE)
             try:
                 move = Move.from_str(encoded_move.decode().strip())
+                print(move)
             except InvalidMove as e:
                 print(encoded_move.decode().strip())
                 raise PlayerResigned
