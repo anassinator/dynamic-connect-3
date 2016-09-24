@@ -17,6 +17,71 @@ class NoSolutionFound(Exception):
     pass
 
 
+class GameState(object):
+
+    """Game state."""
+
+    def __init__(self, board: Board, turn: Player):
+        """Constructs a GameState.
+
+        Args:
+            board: Board.
+            turn: Player's turn.
+        """
+        self.board = board
+        self.turn = turn
+
+
+class TranspositionTable(object):
+
+    """Transposition table."""
+
+    def __init__(self):
+        """Constructs a TranspositionTable."""
+        self._table = set()
+
+    def _hash(self, state: GameState):
+        """Hashes a game state into a unique number.
+ 
+        Args:
+            state: Game state.
+
+        Returns:
+            Unique number.
+        """
+        board, turn = state.board, state.turn
+        length = board.WIDTH * board.HEIGHT
+        hashed = board._white_pieces
+        hashed += board._black_pieces << length
+        hashed += turn.value << length + 1
+        return hashed
+
+    def add(self, state: GameState):
+        """Adds a game state to the transposition table.
+
+        Args:
+            state: Game state.
+        """
+        hashed = self._hash(state)
+        self._table.add(hashed)
+
+    def __contains__(self, state: GameState):
+        """Returns whether the transposition table contains a game state.
+
+        Args:
+            state: Game state.
+
+        Returns:
+            Whether the game state is in the transposition table or not.
+        """
+        hashed = self._hash(state)
+        return self._table.__contains__(hashed)
+
+    def __len__(self):
+        """Returns the number of elements in the transposition table."""
+        return len(self._table)
+
+
 class Search(object, metaclass=ABCMeta):
 
     """Asynchronous search.
@@ -53,8 +118,8 @@ class Search(object, metaclass=ABCMeta):
         heuristic = 0
         for wh in self.heuristics:
             heuristic += wh.weight * wh.heuristic.compute(board, turn)
-        return heuristic 
-    
+        return heuristic
+
     @abstractmethod
     def search(self, board: Board, turn: Player):
         """Starts an indefinite search from the given root board with the given
@@ -85,7 +150,7 @@ class Search(object, metaclass=ABCMeta):
 
 
 class MinimaxSearch(Search):
-    
+
     """Asynchronous minimax search."""
 
     def __init__(self, player: Player, heuristics: List[WeightedHeuristic]):
@@ -97,8 +162,11 @@ class MinimaxSearch(Search):
         """
         super().__init__(player, heuristics)
         self._best_move_yet = None
+        self._transposition_table = None
+        self._depth = 0
+        self._positions = 0
 
-    def search(self, board: Board, turn: Player):
+    def search(self, board: Board, turn: Player, start_depth: int=1):
         """Starts an indefinite search from the given root board with the given
         player's turn.
 
@@ -109,10 +177,15 @@ class MinimaxSearch(Search):
         Args:
             board: Current board configuration.
             turn: Current turn.
+            start_depth: Depth to start searching at.
         """
         self._best_next_move = None
-        for depth in itertools.count():
-            self._best_next_move = self._minimax(board.copy(), turn, depth) 
+        self._moves = 0
+        for depth in itertools.count(start_depth):
+            self._transposition_table = TranspositionTable()
+            self._best_next_move = self._minimax(board.copy(), turn, depth)
+            self._positions += len(self._transposition_table)
+            self._depth = depth
 
     def request_move(self) -> Move:
         """Requests the current best solution.
@@ -124,6 +197,9 @@ class MinimaxSearch(Search):
             NoSolutionFound: If no solution has been found yet.
         """
         if self._best_next_move:
+            s = ("Considered {} positions {} moves ahead: "
+                 .format(self._positions, self._depth))
+            print(s, end="")
             return self._best_next_move
         else:
             raise NoSolutionFound
@@ -161,6 +237,9 @@ class MinimaxSearch(Search):
         """
         if best_value is None:
             return True
+        elif current_value is None:
+            return False
+
         if turn == Player.white:
             return current_value > best_value
         elif turn == Player.black:
@@ -189,6 +268,13 @@ class MinimaxSearch(Search):
         for move in board.available_moves(turn):
             child_board = board.copy()
             child_board.move(move)
+
+            game_state = GameState(child_board, next_turn)
+            if game_state in self._transposition_table:
+                continue
+            else:
+                self._transposition_table.add(game_state)
+
             _, v = self.__minimax(child_board, next_turn, max_depth - 1)
             if self.__minimax_comparator(best_value, v, turn):
                 best_value = v
