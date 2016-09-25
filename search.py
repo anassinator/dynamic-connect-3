@@ -110,8 +110,10 @@ class Search(object, metaclass=ABCMeta):
         """
         heuristic = 0
         board, turn = state.board, state.turn
+
         for wh in self.heuristics:
-            heuristic += wh.weight * wh.heuristic.compute(board, turn)
+            v = wh.heuristic.compute(board, turn)
+            heuristic += wh.weight * v
         return heuristic
 
     @abstractmethod
@@ -217,7 +219,9 @@ class MinimaxSearch(Search):
 
         best_move = None
         best_value = None
-        for move, child in state.next_states():
+        children = sorted(state.next_states(),
+                          key=lambda x: self._compute_heuristic(x[1]))
+        for move, child in children:
             # Check if this board had been visited within this search to avoid
             # loops.
             if child in visited:
@@ -291,7 +295,11 @@ class AlphaBetaPrunedMinimaxSearch(MinimaxSearch):
 
         best_move = None
         best_value = None
-        for move, child in state.next_states():
+
+        children = sorted(state.next_states(),
+                          key=lambda x: self._compute_heuristic(x[1]))
+        # for move, child in children:
+        for move, child in children:
             # Check if this board had been visited within this search to avoid
             # loops.
             if child in visited:
