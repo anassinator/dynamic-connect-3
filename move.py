@@ -47,7 +47,7 @@ class Move(object):
         direction: Direction to move in.
     """
 
-    def __init__(self, x: int, y: int, direction: Direction):
+    def __init__(self, x, y, direction):
         """Constructs a Move.
 
         Args:
@@ -60,7 +60,7 @@ class Move(object):
         self.direction = direction
 
     @classmethod
-    def from_str(cls, s: str) -> "Move":
+    def from_str(cls, s):
         """Constructs a Move from a serialized string.
 
         Args:

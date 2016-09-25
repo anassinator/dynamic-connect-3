@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from math import inf, isnan
-from base_board import Board, Player
+from math import isnan
+from base_board import Player
 from abc import ABCMeta, abstractmethod
 from streaking_boards import generate_streaking_boards
+
+try:
+    from math import inf
+except ImportError:
+    inf = float("inf")
 
 
 class Heuristic(object, metaclass=ABCMeta):
@@ -12,7 +17,7 @@ class Heuristic(object, metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def compute(cls, board: Board, player: Player) -> float:
+    def compute(cls, board, player):
         """Computes the heuristic's value for a given game state.
 
         Args:
@@ -36,7 +41,7 @@ class WeightedHeuristic(object):
         weight: Correspoding weight.
     """
 
-    def __init__(self, heuristic: Heuristic, weight: float):
+    def __init__(self, heuristic, weight):
         """Constructs a WeightedHeuristic.
 
         Args:
@@ -52,7 +57,7 @@ class GoalHeuristic(Heuristic):
     """A heuristic based on whether a player has won the game or not."""
 
     @classmethod
-    def compute(cls, board: Board, player: Player) -> float:
+    def compute(cls, board, player):
         """Computes the heuristic's value for a given game state.
 
         Args:
@@ -81,7 +86,7 @@ class NumberOfRunsOfTwoHeuristic(Heuristic):
     RUNS_OF_TWO = None
 
     @classmethod
-    def compute(cls, board: Board, player: Player) -> float:
+    def compute(cls, board, player):
         """Computes the heuristic's value for a given game state.
 
         Args:
@@ -113,7 +118,7 @@ class DistanceToCenterHeuristic(Heuristic):
     """
 
     @classmethod
-    def compute(cls, board: Board, player: Player) -> float:
+    def compute(cls, board, player):
         """Computes the heuristic's value for a given game state.
 
         Args:
@@ -150,7 +155,7 @@ class NumberOfMovesHeuristic(Heuristic):
     """Heuristic based on the number of available moves."""
 
     @classmethod
-    def compute(cls, board: Board, player: Player) -> float:
+    def compute(cls, board, player):
         """Computes the heuristic's value for a given game state.
 
         Args:
@@ -173,7 +178,7 @@ class NumberOfBlockedGoalsHeuristic(Heuristic):
     RUNS_OF_THREE = None
 
     @classmethod
-    def compute(cls, board: Board, player: Player) -> float:
+    def compute(cls, board, player):
         """Computes the heuristic's value for a given game state.
 
         Args:
@@ -211,8 +216,7 @@ class DistanceToGoalHeuristic(Heuristic):
     RUNS_OF_THREE = None
 
     @classmethod
-    def _distance_to_win(cls, pieces: int, opposite_pieces: int,
-                         run_of_three: int, board: Board):
+    def _distance_to_win(cls, pieces, opposite_pieces, run_of_three, board):
         """Computes the smallest number of moves to reach a winning goal.
 
         Args:
@@ -260,7 +264,7 @@ class DistanceToGoalHeuristic(Heuristic):
         return closest
 
     @classmethod
-    def compute(cls, board: Board, player: Player) -> float:
+    def compute(cls, board, player):
         """Computes the heuristic's value for a given game state.
 
         Args:
@@ -286,8 +290,6 @@ class DistanceToGoalHeuristic(Heuristic):
                                      b, board)
             black_distance = min(d, black_distance)
 
-        # print("dist to goal: w {}, b {}".format(white_distance, black_distance))
-
         value = black_distance - white_distance
         if isnan(value):
             return 0
@@ -300,7 +302,7 @@ class TurnHeuristic(Heuristic):
     """Heuristic based on who's turn it is."""
 
     @classmethod
-    def compute(cls, board: Board, player: Player) -> float:
+    def compute(cls, board, player):
         """Computes the heuristic's value for a given game state.
 
         Args:

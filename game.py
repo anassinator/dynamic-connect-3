@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from board import SmallBoard
-from base_board import Board, Player
+from move import InvalidMove
+from base_board import Player
 from draw_tracker import DrawTracker
-from move import Move, Direction, InvalidMove
+
 
 class Game(object):
 
     """A game instance.
-    
+
     Attributes:
         board: Current board state.
         draw: Whether the game ended in a draw or not.
@@ -17,9 +17,9 @@ class Game(object):
         won: Which player won.
     """
 
-    def __init__(self, board: Board, draw_tracker: DrawTracker=None):
+    def __init__(self, board, draw_tracker=None):
         """Constructs a Game instance from a given starting position.
-        
+
         Args:
             board: Starting board position.
             draw_tracker: Draw tracker to start with.
@@ -35,9 +35,9 @@ class Game(object):
         else:
             self._draw_tracker = draw_tracker
 
-    def play(self, move: Move):
+    def play(self, move):
         """Plays a given move and switches to next player's turn.
-        
+
         Args:
             move: Move to play.
         """
@@ -57,7 +57,7 @@ class Game(object):
         if self.won != Player.none or self.draw:
             self.turn = Player.none
 
-    def copy(self) -> "Game":
+    def copy(self):
         """Returns a deep copy of the game.
 
         Returns:

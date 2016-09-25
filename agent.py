@@ -1,25 +1,22 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from game import Game
-from typing import List
 from timeout import timeout
-from base_board import Board, Player
+from base_board import Player
 from move import Move, PlayerResigned
 from abc import ABCMeta, abstractmethod
-from heuristics import WeightedHeuristic
 from search import AlphaBetaPrunedMinimaxSearch
 
 
 class Agent(object, metaclass=ABCMeta):
 
     """An agent who can play the game.
-    
+
     Attributes:
         player: Acting player.
     """
 
-    def __init__(self, player: Player):
+    def __init__(self, player):
         """Constructs the Agent.
 
         Args:
@@ -31,26 +28,26 @@ class Agent(object, metaclass=ABCMeta):
         self.player = player
         self._game = None
 
-    def play(self, game: Game):
+    def play(self, game):
         """Starts playing a game.
-        
+
         Args:
             game: A copy of the game to play on.
         """
         self._game = game
 
-    def update(self, move: Move):
+    def update(self, move):
         """Updates game with a given move.
-        
+
         Args:
             move: Move.
         """
         self._game.play(move)
 
     @abstractmethod
-    def yield_move(self, max_time: int) -> Move:
+    def yield_move(self, max_time):
         """Yields a move to play.
-        
+
         Args:
             max_time: Max time to come up with a move in seconds.
 
@@ -63,14 +60,14 @@ class Agent(object, metaclass=ABCMeta):
 class HumanAgent(Agent):
 
     """A human agent that plays the game.
-    
+
     Attributes:
         player: Acting player.
     """
-    
-    def yield_move(self, max_time: int) -> Move:
+
+    def yield_move(self, max_time):
         """Yields a move to play.
-        
+
         Args:
             max_time: Max time to come up with a move in seconds. Ignored.
 
@@ -86,18 +83,16 @@ class HumanAgent(Agent):
         except (KeyboardInterrupt, EOFError):
             raise PlayerResigned
 
-        return move
-
 
 class AutonomousAgent(Agent):
 
     """An AI agent that plays a given game.
-    
+
     Attributes:
         player: Acting player.
     """
 
-    def __init__(self, player: Player, heuristics: List[WeightedHeuristic]):
+    def __init__(self, player, heuristics):
         """Constructs an AutonomousAgent.
 
         Args:
@@ -108,9 +103,9 @@ class AutonomousAgent(Agent):
         self._heuristics = heuristics
         self._searcher = AlphaBetaPrunedMinimaxSearch(player, heuristics)
 
-    def yield_move(self, max_time: int) -> Move:
+    def yield_move(self, max_time):
         """Yields a move to play.
-        
+
         Args:
             max_time: Max time to come up with a move in seconds.
 

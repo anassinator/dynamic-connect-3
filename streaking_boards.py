@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from typing import Generator, Type
 from base_board import Board, Player
 
 
-def _consecutive(l: Generator[int, None, None], n: int):
+def _consecutive(l, n):
     """Yields all consecutive n elements from an enumerator.
     
     Args:
@@ -18,7 +17,7 @@ def _consecutive(l: Generator[int, None, None], n: int):
         yield t
 
 
-def generate_streaking_boards(board_class: Type[Board], n: int):
+def generate_streaking_boards(board_class, n):
     """Generates all streaks for a given board type as ints.
     
     Argsstreaking:
@@ -66,7 +65,7 @@ def generate_streaking_boards(board_class: Type[Board], n: int):
     return states
 
 
-def generate_winning_boards(board_class: Type[Board]):
+def generate_winning_boards(board_class):
     """Generates all winning states for a given board type as ints.
     
     Args:

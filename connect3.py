@@ -4,16 +4,14 @@
 import asyncio
 import argparse
 import heuristics
-from typing import List
 from base_board import Player
 from heuristics import WeightedHeuristic
 from board import SmallBoard, LargeBoard
 from agent import HumanAgent, AutonomousAgent
-from game_connector import (GameConnector, LocalGameConnector,
-                            RemoteGameConnector)
+from game_connector import LocalGameConnector, RemoteGameConnector
 
 
-def _get_weighted_heuristics() -> List[WeightedHeuristic]:
+def _get_weighted_heuristics():
     """Gets a list of weighted heuristics for an autonomous agent to use.
 
     Returns:
@@ -30,7 +28,7 @@ def _get_weighted_heuristics() -> List[WeightedHeuristic]:
     ]
 
 
-def player_vs_player(args) -> GameConnector:
+def player_vs_player(args):
     """Sets up connector to play a player vs player game.
 
     Args:
@@ -44,7 +42,7 @@ def player_vs_player(args) -> GameConnector:
     return LocalGameConnector(white_agent, black_agent, args.max_time)
 
 
-def player_vs_agent(args) -> GameConnector:
+def player_vs_agent(args):
     """Sets up connector to play a player vs agent game.
 
     Args:
@@ -66,7 +64,7 @@ def player_vs_agent(args) -> GameConnector:
     return LocalGameConnector(white_agent, black_agent, args.max_time)
 
 
-def agent_vs_agent(args) -> GameConnector:
+def agent_vs_agent(args):
     """Sets up connector to play an agent vs agent game.
 
     Args:
@@ -81,7 +79,7 @@ def agent_vs_agent(args) -> GameConnector:
     return LocalGameConnector(white_agent, black_agent, args.max_time)
 
 
-def play_vs_remote(args) -> GameConnector:
+def play_vs_remote(args):
     """Sets up connector to play a game vs a remote agent.
 
     Args:

@@ -4,14 +4,13 @@ import random
 import asyncio
 import heuristics
 from board import SmallBoard
-from typing import List, Tuple
+from base_board import Player
 from agent import AutonomousAgent
-from base_board import Board, Player
+from heuristics import WeightedHeuristic
 from game_connector import LocalGameConnector
-from heuristics import Heuristic, WeightedHeuristic
 
 
-def generate_random_heuristics(heuristics_list: List[Heuristic]):
+def generate_random_heuristics(heuristics_list):
     """Generates a list of heuristics with random weights.
 
     Args:
@@ -31,7 +30,7 @@ def generate_random_heuristics(heuristics_list: List[Heuristic]):
     return weighted_heuristics
 
 
-def perturb(weighted_heuristics: List[WeightedHeuristic], prob: float):
+def perturb(weighted_heuristics, prob):
     child = []
     for wh in weighted_heuristics:
         weight = wh.weight
@@ -43,9 +42,7 @@ def perturb(weighted_heuristics: List[WeightedHeuristic], prob: float):
 
 
 @asyncio.coroutine
-def play(white_heuristics: List[WeightedHeuristic],
-         black_heuristics: List[WeightedHeuristic],
-         board: Board, max_time: int) -> Player:
+def play(white_heuristics, black_heuristics, board, max_time):
     white_agent = AutonomousAgent(Player.white, white_heuristics)
     black_agent = AutonomousAgent(Player.black, black_heuristics)
     connector = LocalGameConnector(white_agent, black_agent, max_time)
@@ -53,14 +50,13 @@ def play(white_heuristics: List[WeightedHeuristic],
     return connector.winner
 
 
-def _format_heuristics(weighted_heuristics: List[WeightedHeuristic]):
+def _format_heuristics(weighted_heuristics):
     return [(wh.heuristic.__name__, wh.weight)
             for wh in weighted_heuristics]
 
 @asyncio.coroutine
-def climb(first_heuristics: List[WeightedHeuristic],
-          second_heuristics: List[WeightedHeuristic],
-          board: Board, generations: int=100, perturbations: float=0.25):
+def climb(first_heuristics, second_heuristics, board, generations=100,
+          perturbations=0.25):
 
     first_child = first_heuristics
     second_child = second_heuristics

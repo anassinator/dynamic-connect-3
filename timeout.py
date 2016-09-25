@@ -7,7 +7,7 @@ import signal
 class timeout(object):
 
     """Times out after a given number of seconds.
-    
+
     Usage:
         >>>    with timeout(seconds):
         ...        # something slow...
@@ -16,7 +16,7 @@ class timeout(object):
 
     def __init__(self, seconds):
         """Creates a timeout after a number of seconds.
-        
+
         Args:
             seconds: Number of seconds until timeout.
         """

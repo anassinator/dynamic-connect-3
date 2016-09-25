@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import itertools
-from math import inf
-from move import Move
-from typing import List
-from base_board import Board, Player
+from base_board import Player
 from abc import ABCMeta, abstractmethod
-from heuristics import WeightedHeuristic
+
+try:
+    from math import inf
+except ImportError:
+    inf = float("inf")
 
 
 class NoSolutionFound(Exception):
@@ -20,7 +21,7 @@ class GameState(object):
 
     """Game state."""
 
-    def __init__(self, board: Board, turn: Player):
+    def __init__(self, board, turn):
         """Constructs a GameState.
 
         Args:
@@ -32,9 +33,9 @@ class GameState(object):
         self._next_turn = (Player.black if turn == Player.white else
                            Player.white)
 
-    def __eq__(self, other: "GameState") -> bool:
+    def __eq__(self, other):
         """Returns whether two game states are equal or not.
-        
+
         Args:
             other: Game state to compare to.
 
@@ -85,7 +86,7 @@ class Search(object, metaclass=ABCMeta):
         heuristics: List of weighted heuristics to use.
     """
 
-    def __init__(self, player: Player, heuristics: List[WeightedHeuristic]):
+    def __init__(self, player, heuristics):
         """Constructs a Search using the provided heuristics.
 
         Args:
@@ -95,7 +96,7 @@ class Search(object, metaclass=ABCMeta):
         self.player = player
         self.heuristics = heuristics
 
-    def _compute_heuristic(self, state: GameState) -> float:
+    def _compute_heuristic(self, state):
         """Computes the weighted heuristic for the game state given.
 
         Args:
@@ -117,7 +118,7 @@ class Search(object, metaclass=ABCMeta):
         return heuristic
 
     @abstractmethod
-    def search(self, board: Board, turn: Player):
+    def search(self, board, turn):
         """Starts an indefinite search from the given root board with the given
         player's turn.
 
@@ -132,7 +133,7 @@ class Search(object, metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def request_move(self) -> Move:
+    def request_move(self):
         """Requests the current best solution.
 
         Returns:
@@ -148,7 +149,7 @@ class MinimaxSearch(Search):
 
     """Asynchronous minimax search."""
 
-    def __init__(self, player: Player, heuristics: List[WeightedHeuristic]):
+    def __init__(self, player, heuristics):
         """Constructs a Search using the provided heuristics.
 
         Args:
@@ -161,7 +162,7 @@ class MinimaxSearch(Search):
         self._positions = 0
         self._transposition_table = dict()
 
-    def search(self, board: Board, turn: Player):
+    def search(self, board, turn):
         """Starts an indefinite search from the given root board with the given
         player's turn.
 
@@ -184,7 +185,7 @@ class MinimaxSearch(Search):
             self._positions += len(self._transposition_table) - old_positions
             self._depth = depth
 
-    def request_move(self) -> Move:
+    def request_move(self):
         """Requests the current best solution.
 
         Returns:
@@ -202,7 +203,7 @@ class MinimaxSearch(Search):
         else:
             raise NoSolutionFound
 
-    def _search(self, state: GameState, max_depth: int, visited: set):
+    def _search(self, state, max_depth, visited):
         """Searches for the best move given the current board state by looking
         up to a certain depth.
 
@@ -248,8 +249,7 @@ class MinimaxSearch(Search):
 
         return (best_move, best_value)
 
-    def _minimax_comparator(self, best_value: float, current_value: float,
-                            turn: Player) -> bool:
+    def _minimax_comparator(self, best_value, current_value, turn):
         """Compares heuristic values based on the turn such that each player
         plays their optimal move.
 
@@ -281,8 +281,7 @@ class AlphaBetaPrunedMinimaxSearch(MinimaxSearch):
 
     """Minimax search with alpha-beta pruning."""
 
-    def _search(self, state: GameState, max_depth: int, visited: set,
-                 alpha: float=-inf, beta: float=inf):
+    def _search(self, state, max_depth, visited, alpha=-inf, beta=inf):
         """Searches for the best move given the current board state by looking
         up to a certain depth.
 

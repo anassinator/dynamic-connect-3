@@ -3,15 +3,13 @@
 import sys
 import asyncio
 from game import Game
-from typing import Type
-from agent import Agent
-from base_board import Board, Player
+from base_board import Player
 from abc import ABCMeta, abstractmethod
 from move import Move, InvalidMove, PlayerResigned
 
 
 class ConnectionException(Exception):
-    
+
     """Could not connect."""
 
     pass
@@ -26,12 +24,12 @@ class GameConnector(object, metaclass=ABCMeta):
         self._winner = Player.none
 
     @property
-    def winner(self) -> Player:
+    def winner(self):
         """Returns the winner of the game."""
         return self._winner
 
     @asyncio.coroutine
-    def start(self, board_class: Type[Board]):
+    def start(self, board_class):
         """Starts a game asynchronously.
 
         Args:
@@ -69,12 +67,12 @@ class GameConnector(object, metaclass=ABCMeta):
 
     @abstractmethod
     @asyncio.coroutine
-    def setup(self, game: Game):
+    def setup(self, game):
         """Sets up game before it starts.
 
         Args:
             game: Game to play.
-        
+
         Raises:
             ConnectionException: if connection fails.
         """
@@ -88,7 +86,7 @@ class GameConnector(object, metaclass=ABCMeta):
 
     @abstractmethod
     @asyncio.coroutine
-    def request_move(self, turn: Player) -> Move:
+    def request_move(self, turn) -> Move:
         """Requests a move from the given player.
 
         Args:
@@ -101,7 +99,7 @@ class GameConnector(object, metaclass=ABCMeta):
 
     @abstractmethod
     @asyncio.coroutine
-    def on_successful_move(self, move: Move):
+    def on_successful_move(self, move):
         """Called when a move has been validated.
 
         Should be used to update the game state.
@@ -111,7 +109,7 @@ class GameConnector(object, metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    def on_invalid_move(self, msg: str):
+    def on_invalid_move(self, msg):
         """Called when an invalid move is played.
 
         Args:
@@ -119,7 +117,7 @@ class GameConnector(object, metaclass=ABCMeta):
         """
         print(msg)
 
-    def on_turn(self, board: Board, turn: Player):
+    def on_turn(self, board, turn):
         """Called when a player must make a move.
 
         Args:
@@ -129,7 +127,7 @@ class GameConnector(object, metaclass=ABCMeta):
         print(board)
         print("{}'s turn.".format(turn.name.capitalize()))
 
-    def on_resignation(self, player: Player):
+    def on_resignation(self, player):
         """Called when a player resigns.
 
         Args:
@@ -137,7 +135,7 @@ class GameConnector(object, metaclass=ABCMeta):
         """
         print("{} resigned.".format(player.name.capitalize()))
 
-    def on_win(self, board: Board, player: Player):
+    def on_win(self, board, player):
         """Called when the game was won.
 
         Args:
@@ -147,7 +145,7 @@ class GameConnector(object, metaclass=ABCMeta):
         print(board)
         print("{} wins.".format(player.name.capitalize()))
 
-    def on_draw(self, board: Board):
+    def on_draw(self, board):
         """Called when the game ends in a draw.
 
         Args:
@@ -161,8 +159,7 @@ class LocalGameConnector(GameConnector):
 
     """Local multi-agent game connector."""
 
-    def __init__(self, white_agent: Agent, black_agent: Agent,
-                 max_time: int):
+    def __init__(self, white_agent, black_agent, max_time):
         """Constructs a GameConnector from two opposing agents.
 
         Args:
@@ -181,7 +178,7 @@ class LocalGameConnector(GameConnector):
         super().__init__()
 
     @asyncio.coroutine
-    def setup(self, game: Game):
+    def setup(self, game):
         """Sets up game before it starts.
 
         Args:
@@ -196,7 +193,7 @@ class LocalGameConnector(GameConnector):
         pass
 
     @asyncio.coroutine
-    def request_move(self, turn: Player) -> Move:
+    def request_move(self, turn):
         """Requests a move from the given player.
 
         Args:
@@ -213,7 +210,7 @@ class LocalGameConnector(GameConnector):
             raise NotImplementedError
 
     @asyncio.coroutine
-    def on_successful_move(self, move: Move):
+    def on_successful_move(self, move):
         """Called when a move has been validated.
 
         Args:
@@ -229,8 +226,7 @@ class RemoteGameConnector(GameConnector):
 
     BUFFERSIZE = 1024
 
-    def __init__(self, agent: Agent, max_time: int, game_id: str,
-                 hostname: str, port: int, loop: asyncio.AbstractEventLoop):
+    def __init__(self, agent, max_time, game_id, hostname, port, loop):
         """Constructs a RemoteGameConnector using given agent as a local player..
 
         Args:
@@ -255,12 +251,12 @@ class RemoteGameConnector(GameConnector):
         super().__init__()
 
     @asyncio.coroutine
-    def setup(self, game: Game):
+    def setup(self, game):
         """Sets up game before it starts.
 
         Args:
             game: Game to play.
-        
+
         Raises:
             ConnectionException: if connection fails.
         """
@@ -296,7 +292,7 @@ class RemoteGameConnector(GameConnector):
         self._reader = None
 
     @asyncio.coroutine
-    def request_move(self, turn: Player) -> Move:
+    def request_move(self, turn):
         """Requests a move from the given player.
 
         Args:
@@ -338,7 +334,7 @@ class RemoteGameConnector(GameConnector):
         return move
 
     @asyncio.coroutine
-    def on_successful_move(self, move: Move):
+    def on_successful_move(self, move):
         """Called when a move has been validated.
 
         Args:

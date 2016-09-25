@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from enum import Enum
+from abc import ABCMeta, abstractmethod
 from move import Direction, Move, InvalidMove
-from abc import ABCMeta, abstractmethod, abstractproperty
 
 
 class Player(Enum):
@@ -17,7 +17,7 @@ class Player(Enum):
 class Board(object, metaclass=ABCMeta):
 
     """Game board.
-    
+
     Attributes:
         self.WIDTH: Width of the board in number of cells.
         self.HEIGHT: Height of the board in number of cells.
@@ -59,17 +59,17 @@ class Board(object, metaclass=ABCMeta):
         return s
 
     @abstractmethod
-    def copy(self) -> "Board":
+    def copy(self):
         """Returns a deep copy of the board."""
         raise NotImplementedError
 
-    def get(self, x: int, y: int) -> int:
+    def get(self, x, y):
         """Returns the occupancy of the <x, y> cell.
-        
+
         Args:
             x: Horizontal index on the board.
             y: Vertical index on the board.
-        
+
         Returns:
             Player.none if the cell is empty,
             Player.white if it's occupied by a white piece, and
@@ -82,8 +82,8 @@ class Board(object, metaclass=ABCMeta):
             return Player.black
         else:
             return Player.none
-        
-    def set(self, x: int, y: int, player: Player):
+
+    def set(self, x, y, player):
         """Sets the occupancy of the <x, y> cell.
 
         Args:
@@ -102,9 +102,9 @@ class Board(object, metaclass=ABCMeta):
             self._white_pieces &= ~(1 << index)
             self._black_pieces &= ~(1 << index)
 
-    def available_moves(self, player: Player):
+    def available_moves(self, player):
         """Yields all available moves for a given player.
-        
+
         Args:
             player: Player to get available moves for.
 
@@ -133,9 +133,9 @@ class Board(object, metaclass=ABCMeta):
                     if y != max_height and self.get(x, y + 1) == Player.none:
                         yield Move(x, y, Direction.south)
 
-    def move(self, move: Move):
+    def move(self, move):
         """Moves a piece on the board in place.
-        
+
         Args:
             move: Move to make.
         """
@@ -164,7 +164,7 @@ class Board(object, metaclass=ABCMeta):
         elif move.direction == Direction.west:
             self.set(move.x - 1, move.y, current_cell)
 
-    def is_goal(self, player: Player) -> bool:
+    def is_goal(self, player):
         """Returns whether the current board is the given player's goal or not.
 
         Args:
@@ -183,4 +183,3 @@ class Board(object, metaclass=ABCMeta):
                 return True
 
         return False
-

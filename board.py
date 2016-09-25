@@ -12,7 +12,7 @@ class SmallBoard(Board):
     HEIGHT = 4
     WINNING_BOARDS = None
 
-    def __init__(self, _white_pieces: int=None, _black_pieces: int=None):
+    def __init__(self, _white_pieces=None, _black_pieces=None):
         """Constructs a SmallBoard with all pieces in the correct starting
         position.
 
@@ -40,11 +40,11 @@ class SmallBoard(Board):
         else:
             self._black_pieces = _black_pieces
 
-    def copy(self) -> "SmallBoard":
+    def copy(self):
         """Returns a deep copy of the board."""
         return SmallBoard(self._white_pieces, self._black_pieces)
 
-    def is_goal(self, player: Player) -> bool:
+    def is_goal(self, player):
         """Returns whether the current board is the given player's goal or not.
 
         Args:
@@ -63,7 +63,7 @@ class LargeBoard(Board):
     HEIGHT = 6
     WINNING_BOARDS = None
 
-    def __init__(self, _white_pieces: int=None, _black_pieces: int=None):
+    def __init__(self, _white_pieces=None, _black_pieces=None):
         """Constructs a LargeBoard with all pieces in the correct starting
         position.
 
@@ -91,11 +91,11 @@ class LargeBoard(Board):
         else:
             self._black_pieces = _black_pieces
 
-    def copy(self) -> "LargeBoard":
+    def copy(self):
         """Returns a deep copy of the board."""
         return LargeBoard(self._white_pieces, self._black_pieces)
 
-    def is_goal(self, player: Player) -> bool:
+    def is_goal(self, player):
         """Returns whether the current board is the given player's goal or not.
 
         Args:
@@ -104,4 +104,3 @@ class LargeBoard(Board):
         if LargeBoard.WINNING_BOARDS is None:
             LargeBoard.WINNING_BOARDS = generate_winning_boards(LargeBoard)
         return super().is_goal(player)
-
