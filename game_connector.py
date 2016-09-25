@@ -10,6 +10,13 @@ from abc import ABCMeta, abstractmethod
 from move import Move, InvalidMove, PlayerResigned
 
 
+class ConnectionException(Exception):
+    
+    """Could not connect."""
+
+    pass
+
+
 class GameConnector(object, metaclass=ABCMeta):
 
     """Game connector."""
@@ -31,7 +38,11 @@ class GameConnector(object, metaclass=ABCMeta):
             board_class: Game board type to start with.
         """
         game = Game(board_class())
-        yield from self.setup(game)
+
+        try:
+            yield from self.setup(game)
+        except ConnectionException:
+            return
 
         while game.turn != Player.none:
             self.on_turn(game.board, game.turn)
@@ -63,6 +74,9 @@ class GameConnector(object, metaclass=ABCMeta):
 
         Args:
             game: Game to play.
+        
+        Raises:
+            ConnectionException: if connection fails.
         """
         raise NotImplementedError
 
@@ -246,6 +260,9 @@ class RemoteGameConnector(GameConnector):
 
         Args:
             game: Game to play.
+        
+        Raises:
+            ConnectionException: if connection fails.
         """
         self._agent.play(game.copy())
 
@@ -261,8 +278,13 @@ class RemoteGameConnector(GameConnector):
         # Write header to connect to and start game.
         header = "{} {}\n".format(self._game_id, self._agent.player.name)
         self._writer.write(header.encode())
-        yield from self._reader.read(self.BUFFERSIZE)
-        print("OK")
+        response = yield from self._reader.read(self.BUFFERSIZE)
+
+        if response.decode() == header:
+            print("OK")
+        else:
+            print("ERROR: {}".format(response.decode().strip()))
+            raise ConnectionException
 
     @asyncio.coroutine
     def teardown(self):
@@ -298,8 +320,8 @@ class RemoteGameConnector(GameConnector):
                 encoded_move = yield from self._reader.read(self.BUFFERSIZE)
                 if encoded_move is None or len(encoded_move) == 0:
                     print("Received empty response: {}".format(encoded_move))
-                    yield from asyncio.sleep(1)
                     continue
+                break
 
             try:
                 move = Move.from_str(encoded_move.decode().strip())
