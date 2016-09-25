@@ -262,8 +262,8 @@ class DistanceToGoalHeuristic(Heuristic):
             player: Current player.
 
         Returns:
-            The difference between the number of blocked white wins and black
-            blocked wins.
+            The difference between the black's distance to winning and the
+            white's ditance to winning.
         """
         if cls.RUNS_OF_TWO is None:
             board_class = type(board)
@@ -281,3 +281,27 @@ class DistanceToGoalHeuristic(Heuristic):
                                                        board)
 
         return black_distance - white_distance
+
+
+class TurnHeuristic(Heuristic):
+
+    """Heuristic based on who's turn it is."""
+
+    @classmethod
+    def compute(cls, board: Board, player: Player) -> float:
+        """Computes the heuristic's value for a given game state.
+
+        Args:
+            board: Current board.
+            player: Current player.
+
+        Returns:
+            1 if it's the white player's turn.
+            -1 if it's the black player's turn.
+        """
+        if player == Player.white:
+            return 1
+        elif player == Player.black:
+            return -1
+        else:
+            raise NotImplementedError
