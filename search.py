@@ -323,7 +323,7 @@ class AlphaBetaPrunedMinimaxSearch(MinimaxSearch):
             elif best_value is not None and state.turn == Player.black:
                 beta = min(beta, best_value)
 
-            if alpha > beta:
+            if alpha >= beta:
                 break
 
         return (best_move, best_value)
