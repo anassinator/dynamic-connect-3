@@ -115,7 +115,7 @@ class Search(object, metaclass=ABCMeta):
         return heuristic
 
     @abstractmethod
-    def search(self, board: Board, turn: Player, start_depth: int=1):
+    def search(self, board: Board, turn: Player):
         """Starts an indefinite search from the given root board with the given
         player's turn.
 
@@ -126,7 +126,6 @@ class Search(object, metaclass=ABCMeta):
         Args:
             board: Current board configuration.
             turn: Current turn.
-            start_depth: Depth to start searching at.
         """
         raise NotImplementedError
 
@@ -200,19 +199,6 @@ class MinimaxSearch(Search):
             return self._best_next_move
         else:
             raise NoSolutionFound
-
-    def _search(self, board: Board, turn: Player, max_depth: int):
-        """Selects the best move given the current board state by looking up to
-        a certain depth.
-
-        Args:
-            board: Current root board state.
-            turn: Current player's turn.
-            max_depth: Max depth to look at.
-
-        Returns:
-            Best next move.
-        """
 
     def _search(self, state: GameState, max_depth: int, visited: set):
         """Searches for the best move given the current board state by looking

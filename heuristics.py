@@ -29,7 +29,7 @@ class Heuristic(object, metaclass=ABCMeta):
 class WeightedHeuristic(object):
 
     """A heuristic and corresponding weight pairing.
-    
+
     Attributes:
         heuristic: Heuristic.
         weight: Correspoding weight.
@@ -186,7 +186,7 @@ class NumberOfBlockedGoalsHeuristic(Heuristic):
         if cls.RUNS_OF_THREE is None:
             board_class = type(board)
             cls.RUNS_OF_THREE = generate_streaking_boards(board_class, 3)
-    
+
         white_blocked = 0
         black_blocked = 0
         all_pieces = board._white_pieces | board._black_pieces
@@ -200,3 +200,84 @@ class NumberOfBlockedGoalsHeuristic(Heuristic):
                     black_blocked += 1
 
         return white_blocked - white_blocked
+
+
+class DistanceToGoalHeuristic(Heuristic):
+
+    """Heuristic based on the number of moves to reach goal."""
+
+    RUNS_OF_TWO = None
+    RUNS_OF_THREE = None
+
+    @classmethod
+    def _distance_to_win(cls, pieces: int, run_of_two: int, board: Board):
+        """Computes the smallest number of moves to reach a winning goal.
+
+        Args:
+            pieces: Pieces to consider as an int.
+            run_of_two: Current run of two to consider.
+            board: Board to consider.
+
+        Returns:
+            Minimum number of moves to reach goal.
+        """
+        closest = float("inf")
+
+        pieces_indices = {}
+        for i in range(board.WIDTH * board.HEIGHT):
+            if (pieces >> i) & 1:
+                x = i % board.WIDTH
+                y = i % board.HEIGHT
+                pieces_indices[i] = (x, y)
+
+        for b in cls.RUNS_OF_THREE:
+            if b & run_of_two:
+                pieces_to_move = pieces - run_of_two
+                destination = b - run_of_two
+                destination_index = 0
+
+                pieces_to_move_indices = []
+                for i in range(board.WIDTH * board.HEIGHT):
+                    if (pieces_to_move >> i) & 1:
+                        pieces_to_move_indices.append(i)
+                    if (destination >> i) & 1:
+                        destination_index = i
+
+                destination_x = destination_index % board.WIDTH
+                destination_y = destination_index % board.HEIGHT
+                for index in pieces_to_move_indices:
+                    x, y = pieces_indices[index]
+                    distance = abs(x - destination_x) + abs(y - destination_y)
+                    if distance < closest:
+                        closest = distance
+
+        return closest
+
+    @classmethod
+    def compute(cls, board: Board, player: Player) -> float:
+        """Computes the heuristic's value for a given game state.
+
+        Args:
+            board: Current board.
+            player: Current player.
+
+        Returns:
+            The difference between the number of blocked white wins and black
+            blocked wins.
+        """
+        if cls.RUNS_OF_TWO is None:
+            board_class = type(board)
+            cls.RUNS_OF_TWO = generate_streaking_boards(board_class, 2)
+            cls.RUNS_OF_THREE = generate_streaking_boards(board_class, 3)
+
+        white_distance = 0
+        black_distance = 0
+        for b in cls.RUNS_OF_TWO:
+            if b & board._white_pieces == b:
+                white_distance += cls._distance_to_win(board._white_pieces, b,
+                                                       board)
+            if b & board._black_pieces == b:
+                black_distance += cls._distance_to_win(board._black_pieces, b,
+                                                       board)
+
+        return black_distance - white_distance
