@@ -4,11 +4,11 @@ import sys
 from game import Game
 from typing import List
 from timeout import timeout
-from search import MinimaxSearch
 from base_board import Board, Player
 from move import Move, PlayerResigned
 from abc import ABCMeta, abstractmethod
 from heuristics import WeightedHeuristic
+from search import AlphaBetaPrunedMinimaxSearch
 
 
 class Agent(object, metaclass=ABCMeta):
@@ -106,7 +106,7 @@ class AutonomousAgent(Agent):
         """
         super().__init__(player)
         self._heuristics = heuristics
-        self._searcher = MinimaxSearch(player, heuristics)
+        self._searcher = AlphaBetaPrunedMinimaxSearch(player, heuristics)
 
     def yield_move(self, max_time: int) -> Move:
         """Yields a move to play.

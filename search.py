@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import itertools
+from math import inf
 from move import Move
 from typing import List
 from base_board import Board, Player
@@ -159,7 +160,7 @@ class MinimaxSearch(Search):
         self._positions = 0
         self._transposition_table = dict()
 
-    def search(self, board: Board, turn: Player, start_depth: int=1):
+    def search(self, board: Board, turn: Player):
         """Starts an indefinite search from the given root board with the given
         player's turn.
 
@@ -170,14 +171,17 @@ class MinimaxSearch(Search):
         Args:
             board: Current board configuration.
             turn: Current turn.
-            start_depth: Depth to start searching at.
         """
         self._best_next_move = None
         self._moves = 0
         self._positions = 0
 
-        for depth in itertools.count(start_depth):
-            self._best_next_move = self.minimax(board.copy(), turn, depth)
+        for depth in itertools.count():
+            state = GameState(board.copy(), turn)
+            old_positions = len(self._transposition_table)
+            self._best_next_move, _ = self._search(state, depth, set())
+            self._positions += len(self._transposition_table) - old_positions
+            self._depth = depth
 
     def request_move(self) -> Move:
         """Requests the current best solution.
@@ -189,14 +193,15 @@ class MinimaxSearch(Search):
             NoSolutionFound: If no solution has been found yet.
         """
         if self._best_next_move:
-            s = ("Considered {} positions {} moves ahead: "
-                 .format(self._positions, self._depth))
+            s = ("Considered {} new positions ({} total) up to {} moves deep: "
+                 .format(self._positions, len(self._transposition_table),
+                         self._depth))
             print(s, end="")
             return self._best_next_move
         else:
             raise NoSolutionFound
 
-    def minimax(self, board: Board, turn: Player, max_depth: int):
+    def _search(self, board: Board, turn: Player, max_depth: int):
         """Selects the best move given the current board state by looking up to
         a certain depth.
 
@@ -208,16 +213,8 @@ class MinimaxSearch(Search):
         Returns:
             Best next move.
         """
-        state = GameState(board, turn)
 
-        old_positions = len(self._transposition_table)
-        move, _ = self._minimax(state, max_depth, set())
-        self._positions = len(self._transposition_table) - old_positions
-        self._depth = max_depth
-
-        return move
-
-    def _minimax(self, state: GameState, max_depth: int, visited: set):
+    def _search(self, state: GameState, max_depth: int, visited: set):
         """Searches for the best move given the current board state by looking
         up to a certain depth.
 
@@ -246,16 +243,16 @@ class MinimaxSearch(Search):
             if (child, max_depth) in self._transposition_table:
                 v = self._transposition_table[(child, max_depth)]
             else:
-                _, v = self._minimax(child, max_depth - 1, visited)
+                _, v = self._search(child, max_depth - 1, visited)
                 self._transposition_table[(child, max_depth)] = v
 
-            if self.__minimax_comparator(best_value, v, state.turn):
+            if self._minimax_comparator(best_value, v, state.turn):
                 best_move = move
                 best_value = v
 
         return (best_move, best_value)
 
-    def __minimax_comparator(self, best_value: float, current_value: float,
+    def _minimax_comparator(self, best_value: float, current_value: float,
                              turn: Player) -> bool:
         """Compares heuristic values based on the turn such that each player
         plays their optimal move.
@@ -282,3 +279,57 @@ class MinimaxSearch(Search):
             return current_value < best_value
         else:
             raise NotImplementedError
+
+
+class AlphaBetaPrunedMinimaxSearch(MinimaxSearch):
+
+    """Minimax search with alpha-beta pruning."""
+
+    def _search(self, state: GameState, max_depth: int, visited: set,
+                 alpha: float=-inf, beta: float=inf):
+        """Searches for the best move given the current board state by looking
+        up to a certain depth.
+
+        Args:
+            state: Game state.
+            max_depth: Max depth to look at.
+            alpha: Alpha.
+            beta: Beta.
+            visited: Set of visited game states.
+
+        Returns:
+            Tuple of the (best move, its value).
+        """
+        if max_depth == 0 or state.won_by() != Player.none:
+            return (None, self._compute_heuristic(state))
+
+        best_move = None
+        best_value = None
+        for move, child in state.next_states():
+            # Check if this board had been visited within this search to avoid
+            # loops.
+            if child in visited:
+                continue
+            else:
+                visited.add(child)
+
+            # Check if this board had been analyzed to this depth before.
+            if (child, max_depth) in self._transposition_table:
+                v = self._transposition_table[(child, max_depth)]
+            else:
+                _, v = self._search(child, max_depth - 1, visited, alpha, beta)
+                self._transposition_table[(child, max_depth)] = v
+
+            if self._minimax_comparator(best_value, v, state.turn):
+                best_move = move
+                best_value = v
+
+            if best_value is not None and state.turn == Player.white:
+                alpha = max(alpha, best_value)
+            elif best_value is not None and state.turn == Player.black:
+                beta = min(beta, best_value)
+
+            if alpha > beta:
+                break
+
+        return (best_move, best_value)
