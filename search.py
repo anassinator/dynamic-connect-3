@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import asyncio
 import itertools
 from move import Move
 from typing import List
-from threading import Lock
 from base_board import Board, Player
 from abc import ABCMeta, abstractmethod
 from heuristics import WeightedHeuristic
@@ -30,56 +28,51 @@ class GameState(object):
         """
         self.board = board
         self.turn = turn
+        self._next_turn = (Player.black if turn == Player.white else
+                           Player.white)
 
-
-class TranspositionTable(object):
-
-    """Transposition table."""
-
-    def __init__(self):
-        """Constructs a TranspositionTable."""
-        self._table = set()
-
-    def _hash(self, state: GameState):
-        """Hashes a game state into a unique number.
- 
+    def __eq__(self, other: "GameState") -> bool:
+        """Returns whether two game states are equal or not.
+        
         Args:
-            state: Game state.
+            other: Game state to compare to.
 
         Returns:
-            Unique number.
+            Whether the two game states are equivalent or not.
         """
-        board, turn = state.board, state.turn
-        length = board.WIDTH * board.HEIGHT
-        hashed = board._white_pieces
-        hashed += board._black_pieces << length
-        hashed += turn.value << length + 1
-        return hashed
+        return (self.board._white_pieces == other.board._white_pieces and
+                self.board._black_pieces == other.board._black_pieces and
+                self.turn == other.turn)
 
-    def add(self, state: GameState):
-        """Adds a game state to the transposition table.
-
-        Args:
-            state: Game state.
-        """
-        hashed = self._hash(state)
-        self._table.add(hashed)
-
-    def __contains__(self, state: GameState):
-        """Returns whether the transposition table contains a game state.
-
-        Args:
-            state: Game state.
+    def __hash__(self):
+        """Hashes the current game state into a unique integer.
 
         Returns:
-            Whether the game state is in the transposition table or not.
+            Hashed value.
         """
-        hashed = self._hash(state)
-        return self._table.__contains__(hashed)
+        return hash((self.board._white_pieces,
+                     self.board._black_pieces,
+                     self.turn))
 
-    def __len__(self):
-        """Returns the number of elements in the transposition table."""
-        return len(self._table)
+    def won_by(self):
+        """Returns who won the current game state."""
+        if self.board.is_goal(Player.white):
+            return Player.white
+        elif self.board.is_goal(Player.black):
+            return Player.black
+        else:
+            return Player.none
+
+    def next_states(self):
+        """Yields all possible next states.
+
+        Yields:
+            Tuple of (move, resulting game state).
+        """
+        for move in self.board.available_moves(self.turn):
+            child_board = self.board.copy()
+            child_board.move(move)
+            yield (move, GameState(child_board, self._next_turn))
 
 
 class Search(object, metaclass=ABCMeta):
@@ -101,12 +94,11 @@ class Search(object, metaclass=ABCMeta):
         self.player = player
         self.heuristics = heuristics
 
-    def _compute_heuristic(self, board: Board, turn: Player) -> float:
+    def _compute_heuristic(self, state: GameState) -> float:
         """Computes the weighted heuristic for the game state given.
 
         Args:
-            board: Board to analyze.
-            turn: Player's turn.
+            state: Game state to analyze.
 
         Returns:
             The estimated value of the board such that the more positive it is
@@ -116,12 +108,13 @@ class Search(object, metaclass=ABCMeta):
             considers.
         """
         heuristic = 0
+        board, turn = state.board, state.turn
         for wh in self.heuristics:
             heuristic += wh.weight * wh.heuristic.compute(board, turn)
         return heuristic
 
     @abstractmethod
-    def search(self, board: Board, turn: Player):
+    def search(self, board: Board, turn: Player, start_depth: int=1):
         """Starts an indefinite search from the given root board with the given
         player's turn.
 
@@ -132,7 +125,7 @@ class Search(object, metaclass=ABCMeta):
         Args:
             board: Current board configuration.
             turn: Current turn.
-            loop: Event loop.
+            start_depth: Depth to start searching at.
         """
         raise NotImplementedError
 
@@ -162,9 +155,9 @@ class MinimaxSearch(Search):
         """
         super().__init__(player, heuristics)
         self._best_move_yet = None
-        self._transposition_table = None
         self._depth = 0
         self._positions = 0
+        self._transposition_table = dict()
 
     def search(self, board: Board, turn: Player, start_depth: int=1):
         """Starts an indefinite search from the given root board with the given
@@ -181,11 +174,10 @@ class MinimaxSearch(Search):
         """
         self._best_next_move = None
         self._moves = 0
+        self._positions = 0
+
         for depth in itertools.count(start_depth):
-            self._transposition_table = TranspositionTable()
-            self._best_next_move = self._minimax(board.copy(), turn, depth)
-            self._positions += len(self._transposition_table)
-            self._depth = depth
+            self._best_next_move = self.minimax(board.copy(), turn, depth)
 
     def request_move(self) -> Move:
         """Requests the current best solution.
@@ -204,7 +196,7 @@ class MinimaxSearch(Search):
         else:
             raise NoSolutionFound
 
-    def _minimax(self, board: Board, turn: Player, max_depth: int):
+    def minimax(self, board: Board, turn: Player, max_depth: int):
         """Selects the best move given the current board state by looking up to
         a certain depth.
 
@@ -216,8 +208,52 @@ class MinimaxSearch(Search):
         Returns:
             Best next move.
         """
-        move, _ = self.__minimax(board, turn, max_depth)
+        state = GameState(board, turn)
+
+        old_positions = len(self._transposition_table)
+        move, _ = self._minimax(state, max_depth, set())
+        self._positions = len(self._transposition_table) - old_positions
+        self._depth = max_depth
+
         return move
+
+    def _minimax(self, state: GameState, max_depth: int, visited: set):
+        """Searches for the best move given the current board state by looking
+        up to a certain depth.
+
+        Args:
+            state: Game state.
+            max_depth: Max depth to look at.
+            visited: Set of visited game states.
+
+        Returns:
+            Tuple of the (best move, its value).
+        """
+        if max_depth == 0 or state.won_by() != Player.none:
+            return (None, self._compute_heuristic(state))
+
+        best_move = None
+        best_value = None
+        for move, child in state.next_states():
+            # Check if this board had been visited within this search to avoid
+            # loops.
+            if child in visited:
+                continue
+            else:
+                visited.add(child)
+
+            # Check if this board had been analyzed to this depth before.
+            if (child, max_depth) in self._transposition_table:
+                v = self._transposition_table[(child, max_depth)]
+            else:
+                _, v = self._minimax(child, max_depth - 1, visited)
+                self._transposition_table[(child, max_depth)] = v
+
+            if self.__minimax_comparator(best_value, v, state.turn):
+                best_move = move
+                best_value = v
+
+        return (best_move, best_value)
 
     def __minimax_comparator(self, best_value: float, current_value: float,
                              turn: Player) -> bool:
@@ -246,38 +282,3 @@ class MinimaxSearch(Search):
             return current_value < best_value
         else:
             raise NotImplementedError
-
-    def __minimax(self, board: Board, turn: Player, max_depth: int):
-        """Selects the best move given the current board state by looking up to
-        a certain depth.
-
-        Args:
-            board: Current root board state.
-            turn: Current player's turn.
-            max_depth: Max depth to look at.
-
-        Returns:
-            Tuple of (best move, heuristic value).
-        """
-        next_turn = Player.black if turn == Player.white else Player.white
-        if max_depth == 0 or board.is_goal(next_turn):
-            return (None, self._compute_heuristic(board, turn))
-
-        best_move = None
-        best_value = None
-        for move in board.available_moves(turn):
-            child_board = board.copy()
-            child_board.move(move)
-
-            game_state = GameState(child_board, next_turn)
-            if game_state in self._transposition_table:
-                continue
-            else:
-                self._transposition_table.add(game_state)
-
-            _, v = self.__minimax(child_board, next_turn, max_depth - 1)
-            if self.__minimax_comparator(best_value, v, turn):
-                best_value = v
-                best_move = move
-
-        return (best_move, best_value)

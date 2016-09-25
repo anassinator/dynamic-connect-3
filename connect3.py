@@ -3,10 +3,10 @@
 
 import asyncio
 import argparse
+from typing import List
 from base_board import Player
-from typing import List, Tuple
 from board import SmallBoard, LargeBoard
-from agent import Agent, HumanAgent, AutonomousAgent
+from agent import HumanAgent, AutonomousAgent
 from game_connector import (GameConnector, LocalGameConnector,
                             RemoteGameConnector)
 from heuristics import (WeightedHeuristic, GoalHeuristic,
@@ -27,7 +27,7 @@ def _get_weighted_heuristics() -> List[WeightedHeuristic]:
 
 def player_vs_player(args) -> GameConnector:
     """Sets up connector to play a player vs player game.
-    
+
     Args:
         args: Command-line arguments.
 
@@ -119,8 +119,8 @@ def parse_args():
     pve = subparsers.add_parser("pve", help="play human vs computer")
     add_shared_arguments(pve)
     pve.add_argument("--black", dest="player", const=Player.black,
-                        default=Player.white, action="store_const",
-                        help="play as black (default: white)")
+                     default=Player.white, action="store_const",
+                     help="play as black (default: white)")
     pve.set_defaults(func=player_vs_agent)
 
     # Agent vs agent play.
