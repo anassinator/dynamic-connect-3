@@ -311,7 +311,10 @@ class RemoteGameConnector(GameConnector):
             # Forward agent's move to the server.
             encoded_move = "{}\n".format(move).encode()
             self._writer.write(encoded_move)
-            yield from self._reader.read(self.BUFFERSIZE)
+            response = yield from self._reader.read(self.BUFFERSIZE)
+            if response != encoded_move:
+                print("ERROR: sent {}, received: {}".format(encoded_move,
+                                                            response))
         else:
             encoded_move = None
             while True:
