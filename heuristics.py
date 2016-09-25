@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from math import inf, isnan
 from base_board import Board, Player
 from abc import ABCMeta, abstractmethod
 from streaking_boards import generate_streaking_boards
@@ -63,9 +64,9 @@ class GoalHeuristic(Heuristic):
             as -inf. Anything else returns 0.
         """
         if board.is_goal(Player.white):
-            return float("inf")
+            return inf
         elif board.is_goal(Player.black):
-            return float("-inf")
+            return -inf
 
         return 0
 
@@ -199,7 +200,7 @@ class NumberOfBlockedGoalsHeuristic(Heuristic):
                 else:
                     black_blocked += 1
 
-        return white_blocked - white_blocked
+        return white_blocked - black_blocked
 
 
 class DistanceToGoalHeuristic(Heuristic):
@@ -210,46 +211,51 @@ class DistanceToGoalHeuristic(Heuristic):
     RUNS_OF_THREE = None
 
     @classmethod
-    def _distance_to_win(cls, pieces: int, run_of_two: int, board: Board):
+    def _distance_to_win(cls, pieces: int, opposite_pieces: int,
+                         run_of_three: int, board: Board):
         """Computes the smallest number of moves to reach a winning goal.
 
         Args:
             pieces: Pieces to consider as an int.
-            run_of_two: Current run of two to consider.
+            opposite_pieces: Opposing player's pieces as an int.
+            run_of_three: Current run of three to consider.
             board: Board to consider.
 
         Returns:
             Minimum number of moves to reach goal.
         """
-        closest = float("inf")
+        pieces_coinciding = pieces & run_of_three
+        if (pieces_coinciding & (pieces_coinciding - 1)) == 0:
+            # Only 0 or 1 pieces are coinciding so don't consider.
+            return inf
 
-        pieces_indices = {}
+        destination = run_of_three - pieces_coinciding
+        if destination == 0:
+            # Goal already achieved.
+            return 0
+
+        if (opposite_pieces | pieces) & run_of_three == run_of_three:
+            # Blocked by opposite pieces.
+            return inf
+
+        movable_pieces_locations = set()
+        destination_location = None
         for i in range(board.WIDTH * board.HEIGHT):
-            if (pieces >> i) & 1:
+            if (pieces_coinciding >> i) & 1:
                 x = i % board.WIDTH
                 y = i % board.HEIGHT
-                pieces_indices[i] = (x, y)
+                movable_pieces_locations.add((x, y))
+            if destination_location is None:
+                if (destination >> i) & 1:
+                    x = i % board.WIDTH
+                    y = i % board.HEIGHT
+                    destination_location = (x, y)
 
-        for b in cls.RUNS_OF_THREE:
-            if b & run_of_two:
-                pieces_to_move = pieces - run_of_two
-                destination = b - run_of_two
-                destination_index = 0
-
-                pieces_to_move_indices = []
-                for i in range(board.WIDTH * board.HEIGHT):
-                    if (pieces_to_move >> i) & 1:
-                        pieces_to_move_indices.append(i)
-                    if (destination >> i) & 1:
-                        destination_index = i
-
-                destination_x = destination_index % board.WIDTH
-                destination_y = destination_index % board.HEIGHT
-                for index in pieces_to_move_indices:
-                    x, y = pieces_indices[index]
-                    distance = abs(x - destination_x) + abs(y - destination_y)
-                    if distance < closest:
-                        closest = distance
+        closest = inf
+        for x, y in movable_pieces_locations:
+            dx = abs(x - destination_location[0])
+            dy = abs(y - destination_location[1])
+            closest = min(closest, dx + dy)
 
         return closest
 
@@ -265,20 +271,26 @@ class DistanceToGoalHeuristic(Heuristic):
             The difference between the black's distance to winning and the
             white's ditance to winning.
         """
-        if cls.RUNS_OF_TWO is None:
+        if cls.RUNS_OF_THREE is None:
             board_class = type(board)
-            cls.RUNS_OF_TWO = generate_streaking_boards(board_class, 2)
             cls.RUNS_OF_THREE = generate_streaking_boards(board_class, 3)
 
-        white_distance = 0
-        black_distance = 0
-        for b in cls.RUNS_OF_TWO:
-            if b & board._white_pieces == b:
-                white_distance += cls._distance_to_win(board._white_pieces, b,
-                                                       board)
-            if b & board._black_pieces == b:
-                black_distance += cls._distance_to_win(board._black_pieces, b,
-                                                       board)
+        white_distance = inf
+        black_distance = inf
+        for b in cls.RUNS_OF_THREE:
+            d = cls._distance_to_win(board._white_pieces, board._black_pieces,
+                                     b, board)
+            white_distance = min(d, white_distance)
+
+            d = cls._distance_to_win(board._black_pieces, board._white_pieces,
+                                     b, board)
+            black_distance = min(d, black_distance)
+
+        # print("dist to goal: w {}, b {}".format(white_distance, black_distance))
+
+        value = black_distance - white_distance
+        if isnan(value):
+            return 0
 
         return black_distance - white_distance
 
