@@ -3,25 +3,25 @@
 
 import asyncio
 import argparse
+import heuristics
 from typing import List
 from base_board import Player
 from board import SmallBoard, LargeBoard
 from agent import HumanAgent, AutonomousAgent
 from game_connector import (GameConnector, LocalGameConnector,
                             RemoteGameConnector)
-from heuristics import (WeightedHeuristic, GoalHeuristic,
-                        NumberOfRunsOfTwoHeuristic)
 
 
-def _get_weighted_heuristics() -> List[WeightedHeuristic]:
+def _get_weighted_heuristics() -> List[heuristics.WeightedHeuristic]:
     """Gets a list of weighted heuristics for an autonomous agent to use.
 
     Returns:
         List of weighted heuristics.
     """
     return [
-        WeightedHeuristic(GoalHeuristic, 1),
-        WeightedHeuristic(NumberOfRunsOfTwoHeuristic, 1)
+        heuristics.WeightedHeuristic(heuristics.GoalHeuristic, 1),
+        heuristics.WeightedHeuristic(heuristics.NumberOfRunsOfTwoHeuristic, 1),
+        heuristics.WeightedHeuristic(heuristics.DistanceToCenterHeuristic, 1)
     ]
 
 

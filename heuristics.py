@@ -104,3 +104,41 @@ class NumberOfRunsOfTwoHeuristic(Heuristic):
 
         return white_runs - black_runs
 
+
+class DistanceToCenterHeuristic(Heuristic):
+
+    """A heuristic based on the distance from each piece to the center of the
+    board.
+    """
+
+    @classmethod
+    def compute(cls, board: Board, player: Player) -> float:
+        """Computes the heuristic's value for a given game state.
+
+        Args:
+            board: Current board.
+            player: Current player.
+
+        Returns:
+            The difference between the sum of the distances of all black pieces
+            from the center minus the sum of the distances of all white pieces
+            from the center.
+        """
+        center_x = (board.WIDTH - 1) / 2
+        center_y = (board.HEIGHT - 1) / 2
+
+        white_distance = 0
+        black_distance = 0
+        for x in range(board.WIDTH):
+            for y in range(board.HEIGHT):
+                piece = board.get(x, y)
+                if piece == Player.none:
+                    continue
+
+                distance = abs(x - center_x) + abs(y - center_y)
+                if piece == Player.white:
+                    white_distance += distance
+                else:
+                    black_distance += distance
+
+        return black_distance - white_distance
