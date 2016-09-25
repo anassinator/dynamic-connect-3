@@ -11,18 +11,21 @@ from game_connector import LocalGameConnector
 from heuristics import Heuristic, WeightedHeuristic
 
 
-def generate_random_heuristics(heuristics: List[Heuristic]):
+def generate_random_heuristics(heuristics_list: List[Heuristic]):
     """Generates a list of heuristics with random weights.
 
     Args:
-        heuristics: Heuristics to choose from.
+        heuristics_list: Heuristics to choose from.
 
     Returns:
         List of randomly weighted heuristics.
     """
     weighted_heuristics = []
-    for h in heuristics:
-        weight = random.random()
+    for h in heuristics_list:
+        if h == heuristics.GoalHeuristic:
+            weight = 1.0
+        else:
+            weight = random.random()
         weighted_heuristics.append(WeightedHeuristic(h, weight))
 
     return weighted_heuristics
@@ -32,7 +35,7 @@ def perturb(weighted_heuristics: List[WeightedHeuristic], prob: float):
     child = []
     for wh in weighted_heuristics:
         weight = wh.weight
-        if prob > random.random():
+        if wh.heuristic != heuristics.GoalHeuristic and prob > random.random():
             weight = random.random()
         child.append(WeightedHeuristic(wh.heuristic, weight))
 
