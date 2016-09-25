@@ -291,15 +291,23 @@ class RemoteGameConnector(GameConnector):
             self._writer.write(encoded_move)
             yield from self._reader.read(self.BUFFERSIZE)
         else:
-            print("Waiting for move... ", end="")
-            sys.stdout.flush()
+            encoded_move = None
+            while True:
+                print("Waiting for move... ", end="")
+                sys.stdout.flush()
+                encoded_move = yield from self._reader.read(self.BUFFERSIZE)
+                if encoded_move is None or len(encoded_move) == 0:
+                    print("Received empty response: {}".format(encoded_move))
+                    yield from asyncio.sleep(1)
+                    continue
 
-            encoded_move = yield from self._reader.read(self.BUFFERSIZE)
             try:
                 move = Move.from_str(encoded_move.decode().strip())
                 print(move)
             except InvalidMove as e:
-                print(encoded_move.decode().strip())
+                print("{}: {} ({} bytes)".format(e.message,
+                                                 encoded_move,
+                                                 len(encoded_move)))
                 raise PlayerResigned
 
         return move
