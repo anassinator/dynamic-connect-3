@@ -163,3 +163,40 @@ class NumberOfMovesHeuristic(Heuristic):
         white_moves = len(list(board.available_moves(Player.white)))
         black_moves = len(list(board.available_moves(Player.black)))
         return white_moves - black_moves
+
+
+class NumberOfBlockedGoalsHeuristic(Heuristic):
+
+    """Heuristic based on the number of blocked goals."""
+
+    RUNS_OF_THREE = None
+
+    @classmethod
+    def compute(cls, board: Board, player: Player) -> float:
+        """Computes the heuristic's value for a given game state.
+
+        Args:
+            board: Current board.
+            player: Current player.
+
+        Returns:
+            The difference between the number of blocked white wins and black
+            blocked wins.
+        """
+        if cls.RUNS_OF_THREE is None:
+            board_class = type(board)
+            cls.RUNS_OF_THREE = generate_streaking_boards(board_class, 3)
+    
+        white_blocked = 0
+        black_blocked = 0
+        all_pieces = board._white_pieces | board._black_pieces
+        for win in cls.RUNS_OF_THREE:
+            if win & all_pieces == win:
+                white_almost_win = win ^ board._white_pieces
+                if (white_almost_win & (white_almost_win - 1)) > 0:
+                    # More than one bit is set so a white win is blocked.
+                    white_blocked += 1
+                else:
+                    black_blocked += 1
+
+        return white_blocked - white_blocked
