@@ -219,8 +219,14 @@ class MinimaxSearch(Search):
 
         best_move = None
         best_value = None
-        children = sorted(state.next_states(),
-                          key=lambda x: self._compute_heuristic(x[1]))
+
+        if state.turn == Player.white:
+            children = sorted(state.next_states(),
+                              key=lambda x: -self._compute_heuristic(x[1]))
+        else:
+            children = sorted(state.next_states(),
+                              key=lambda x: self._compute_heuristic(x[1]))
+
         for move, child in children:
             # Check if this board had been visited within this search to avoid
             # loops.
@@ -243,7 +249,7 @@ class MinimaxSearch(Search):
         return (best_move, best_value)
 
     def _minimax_comparator(self, best_value: float, current_value: float,
-                             turn: Player) -> bool:
+                            turn: Player) -> bool:
         """Compares heuristic values based on the turn such that each player
         plays their optimal move.
 
@@ -296,9 +302,13 @@ class AlphaBetaPrunedMinimaxSearch(MinimaxSearch):
         best_move = None
         best_value = None
 
-        children = sorted(state.next_states(),
-                          key=lambda x: self._compute_heuristic(x[1]))
-        # for move, child in children:
+        if state.turn == Player.white:
+            children = sorted(state.next_states(),
+                              key=lambda x: -self._compute_heuristic(x[1]))
+        else:
+            children = sorted(state.next_states(),
+                              key=lambda x: self._compute_heuristic(x[1]))
+
         for move, child in children:
             # Check if this board had been visited within this search to avoid
             # loops.
