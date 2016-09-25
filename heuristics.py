@@ -142,3 +142,24 @@ class DistanceToCenterHeuristic(Heuristic):
                     black_distance += distance
 
         return black_distance - white_distance
+
+
+class NumberOfMovesHeuristic(Heuristic):
+
+    """Heuristic based on the number of available moves."""
+
+    @classmethod
+    def compute(cls, board: Board, player: Player) -> float:
+        """Computes the heuristic's value for a given game state.
+
+        Args:
+            board: Current board.
+            player: Current player.
+
+        Returns:
+            The difference between the number of available moves white can take
+            and black can take.
+        """
+        white_moves = len(list(board.available_moves(Player.white)))
+        black_moves = len(list(board.available_moves(Player.black)))
+        return white_moves - black_moves

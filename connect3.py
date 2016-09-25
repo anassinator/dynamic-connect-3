@@ -21,7 +21,8 @@ def _get_weighted_heuristics() -> List[heuristics.WeightedHeuristic]:
     return [
         heuristics.WeightedHeuristic(heuristics.GoalHeuristic, 1),
         heuristics.WeightedHeuristic(heuristics.NumberOfRunsOfTwoHeuristic, 1),
-        heuristics.WeightedHeuristic(heuristics.DistanceToCenterHeuristic, 1)
+        heuristics.WeightedHeuristic(heuristics.DistanceToCenterHeuristic, 1),
+        heuristics.WeightedHeuristic(heuristics.NumberOfMovesHeuristic, 1)
     ]
 
 
