@@ -14,10 +14,19 @@ class GameConnector(object, metaclass=ABCMeta):
 
     """Game connector."""
 
+    def __init__(self):
+        """Constructs a GameConnector."""
+        self._winner = Player.none
+
+    @property
+    def winner(self) -> Player:
+        """Returns the winner of the game."""
+        return self._winner
+
     @asyncio.coroutine
     def start(self, board_class: Type[Board]):
         """Starts a game asynchronously.
-        
+
         Args:
             board_class: Game board type to start with.
         """
@@ -40,6 +49,7 @@ class GameConnector(object, metaclass=ABCMeta):
             yield from self.on_successful_move(move)
 
         if game.won != Player.none:
+            self._winner = game.won
             self.on_win(game.board, game.won)
         elif game.draw:
             self.on_draw(game.board)
@@ -50,7 +60,7 @@ class GameConnector(object, metaclass=ABCMeta):
     @asyncio.coroutine
     def setup(self, game: Game):
         """Sets up game before it starts.
-        
+
         Args:
             game: Game to play.
         """
@@ -89,7 +99,7 @@ class GameConnector(object, metaclass=ABCMeta):
 
     def on_invalid_move(self, msg: str):
         """Called when an invalid move is played.
-        
+
         Args:
             msg: Why the move was invalid.
         """
@@ -125,7 +135,7 @@ class GameConnector(object, metaclass=ABCMeta):
 
     def on_draw(self, board: Board):
         """Called when the game ends in a draw.
-        
+
         Args:
             board: Current board.
         """
@@ -140,7 +150,7 @@ class LocalGameConnector(GameConnector):
     def __init__(self, white_agent: Agent, black_agent: Agent,
                  max_time: int):
         """Constructs a GameConnector from two opposing agents.
-        
+
         Args:
             white_agent: White agent.
             black_agent: Black agent.
@@ -154,10 +164,12 @@ class LocalGameConnector(GameConnector):
             player = white_agent.player
             raise Exception("Both players cannot be {}.".format(player))
 
+        super().__init__()
+
     @asyncio.coroutine
     def setup(self, game: Game):
         """Sets up game before it starts.
-        
+
         Args:
             game: Game to play.
         """
@@ -206,7 +218,7 @@ class RemoteGameConnector(GameConnector):
     def __init__(self, agent: Agent, max_time: int, game_id: str,
                  hostname: str, port: int, loop: asyncio.AbstractEventLoop):
         """Constructs a RemoteGameConnector using given agent as a local player..
-        
+
         Args:
             agent: Black agent.
             max_time: Max time for an agent to come up with a move in seconds.
@@ -226,10 +238,12 @@ class RemoteGameConnector(GameConnector):
         self._reader = None
         self._writer = None
 
+        super().__init__()
+
     @asyncio.coroutine
     def setup(self, game: Game):
         """Sets up game before it starts.
-        
+
         Args:
             game: Game to play.
         """
@@ -255,7 +269,7 @@ class RemoteGameConnector(GameConnector):
         """Tears down game once it ends."""
         if self._writer:
             self._writer.close()
-    
+
         self._writer = None
         self._reader = None
 
