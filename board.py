@@ -75,19 +75,19 @@ class LargeBoard(Board):
 
         # Add white pieces.
         if _white_pieces is None:
-            self.set(0, 1, Player.white)
-            self.set(0, 3, Player.white)
-            self.set(self.WIDTH - 1, 2, Player.white)
-            self.set(self.WIDTH - 1, 4, Player.white)
+            self.set(1, 1, Player.white)
+            self.set(1, 3, Player.white)
+            self.set(self.WIDTH - 2, 2, Player.white)
+            self.set(self.WIDTH - 2, 4, Player.white)
         else:
             self._white_pieces = _white_pieces
 
         # Add black pieces.
         if _black_pieces is None:
-            self.set(0, 2, Player.black)
-            self.set(0, 4, Player.black)
-            self.set(self.WIDTH - 1, 1, Player.black)
-            self.set(self.WIDTH - 1, 3, Player.black)
+            self.set(1, 2, Player.black)
+            self.set(1, 4, Player.black)
+            self.set(self.WIDTH - 2, 1, Player.black)
+            self.set(self.WIDTH - 2, 3, Player.black)
         else:
             self._black_pieces = _black_pieces
 
