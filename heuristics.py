@@ -69,9 +69,9 @@ class GoalHeuristic(Heuristic):
             as -inf. Anything else returns 0.
         """
         if board.is_goal(Player.white):
-            return inf
+            return 1000.0
         elif board.is_goal(Player.black):
-            return -inf
+            return -1000.0
 
         return 0
 
