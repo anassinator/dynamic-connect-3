@@ -181,7 +181,7 @@ class MinimaxSearch(Search):
         for depth in itertools.count():
             state = GameState(board.copy(), turn)
             old_positions = len(self._transposition_table)
-            self._best_next_move, _ = self._search(state, depth, set())
+            self._best_next_move, _ = self._search(state, 0, depth)
             self._positions += len(self._transposition_table) - old_positions
             self._depth = depth
 
@@ -203,19 +203,22 @@ class MinimaxSearch(Search):
         else:
             raise NoSolutionFound
 
-    def _search(self, state, max_depth, visited):
+    def _search(self, state, curr_depth, max_depth):
         """Searches for the best move given the current board state by looking
         up to a certain depth.
 
         Args:
             state: Game state.
+            curr_depth: Current depth looking at.
             max_depth: Max depth to look at.
-            visited: Set of visited game states.
 
         Returns:
             Tuple of the (best move, its value).
         """
-        if max_depth == 0 or state.won_by() != Player.none:
+        if state.won_by() != Player.none:
+            # Favor closer wins.
+            return (None, self._compute_heuristic(state) / curr_depth)
+        if curr_depth == max_depth:
             return (None, self._compute_heuristic(state))
 
         best_move = None
@@ -228,20 +231,14 @@ class MinimaxSearch(Search):
             children = sorted(state.next_states(),
                               key=lambda x: self._compute_heuristic(x[1]))
 
+        depth_to_search = max_depth - curr_depth
         for move, child in children:
-            # Check if this board had been visited within this search to avoid
-            # loops.
-            if child in visited:
-                continue
-            else:
-                visited.add(child)
-
             # Check if this board had been analyzed to this depth before.
-            if (child, max_depth) in self._transposition_table:
-                v = self._transposition_table[(child, max_depth)]
+            if (child, depth_to_search) in self._transposition_table:
+                v = self._transposition_table[(child, depth_to_search)]
             else:
-                _, v = self._search(child, max_depth - 1, visited)
-                self._transposition_table[(child, max_depth)] = v
+                _, v = self._search(child, curr_depth + 1, max_depth)
+                self._transposition_table[(child, depth_to_search)] = v
 
             if self._minimax_comparator(best_value, v, state.turn):
                 best_move = move
@@ -281,21 +278,24 @@ class AlphaBetaPrunedMinimaxSearch(MinimaxSearch):
 
     """Minimax search with alpha-beta pruning."""
 
-    def _search(self, state, max_depth, visited, alpha=-inf, beta=inf):
+    def _search(self, state, curr_depth, max_depth, alpha=-inf, beta=inf):
         """Searches for the best move given the current board state by looking
         up to a certain depth.
 
         Args:
             state: Game state.
+            curr_depth: Current depth looking at.
             max_depth: Max depth to look at.
             alpha: Alpha.
             beta: Beta.
-            visited: Set of visited game states.
 
         Returns:
             Tuple of the (best move, its value).
         """
-        if max_depth == 0 or state.won_by() != Player.none:
+        if state.won_by() != Player.none:
+            # Favor closer wins.
+            return (None, self._compute_heuristic(state) / curr_depth)
+        if curr_depth == max_depth:
             return (None, self._compute_heuristic(state))
 
         best_move = None
@@ -308,20 +308,15 @@ class AlphaBetaPrunedMinimaxSearch(MinimaxSearch):
             children = sorted(state.next_states(),
                               key=lambda x: self._compute_heuristic(x[1]))
 
+        depth_to_search = max_depth - curr_depth
         for move, child in children:
-            # Check if this board had been visited within this search to avoid
-            # loops.
-            if child in visited:
-                continue
-            else:
-                visited.add(child)
-
             # Check if this board had been analyzed to this depth before.
-            if (child, max_depth) in self._transposition_table:
-                v = self._transposition_table[(child, max_depth)]
+            if (child, depth_to_search) in self._transposition_table:
+                v = self._transposition_table[(child, depth_to_search)]
             else:
-                _, v = self._search(child, max_depth - 1, visited, alpha, beta)
-                self._transposition_table[(child, max_depth)] = v
+                _, v = self._search(child, curr_depth + 1, max_depth,
+                                    alpha, beta)
+                self._transposition_table[(child, depth_to_search)] = v
 
             if self._minimax_comparator(best_value, v, state.turn):
                 best_move = move
