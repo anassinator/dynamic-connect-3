@@ -193,7 +193,7 @@ class MinimaxSearch(Search):
             NoSolutionFound: If no solution has been found yet.
         """
         if self._best_next_move:
-            print("Searched up to {} moves deep: ".format(self._depth))
+            print("Searched up to {} moves deep: ".format(self._depth), end="")
             return self._best_next_move
         else:
             raise NoSolutionFound
@@ -318,7 +318,8 @@ class AlphaBetaPrunedMinimaxSearch(MinimaxSearch):
                 best_value = v
 
             if curr_depth == 0:
-                print(max_depth, str(move), v, str(best_move))
+                print("depth: {}, considering: {}, move: {}, best: {}"
+                      .format(max_depth, str(move), v, str(best_move)))
 
             if best_value is not None and state.turn == Player.white:
                 alpha = max(alpha, best_value)

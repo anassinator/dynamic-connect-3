@@ -117,8 +117,7 @@ class AutonomousAgent(Agent):
         Raises:
             PlayerResigned: If the agent resigns.
         """
-        print("Thinking... ", end="")
-        sys.stdout.flush()
+        print("Thinking... ")
 
         try:
             with timeout(max_time):
