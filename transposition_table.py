@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sqlite3
+from threading import Lock
 from abc import ABCMeta, abstractmethod
 
 
@@ -93,6 +94,7 @@ class PermanentTranspositionTable(object, metaclass=ABCMeta):
         Args:
             filename: Filename of SQLite database.
         """
+        self._lock = Lock()
         self._conn = sqlite3.connect(filename)
         self.__setup()
 
@@ -116,8 +118,6 @@ class PermanentTranspositionTable(object, metaclass=ABCMeta):
         Returns:
             The corresponding value.
         """
-        c = self._conn.cursor()
-
         state, depth_searched = key
         s = """
         SELECT heuristic FROM transposition_table
@@ -133,9 +133,13 @@ class PermanentTranspositionTable(object, metaclass=ABCMeta):
             "turn": state.turn.value,
             "depth": depth_searched
         }
-        c.execute(s, parameters)
-        result = c.fetchone()
-        c.close()
+
+        c = self._conn.cursor()
+        with self._lock:
+            c.execute(s, parameters)
+            result = c.fetchone()
+            c.close()
+            
         return result[0] if result is not None else None
 
     def __setitem__(self, key, value):
@@ -156,7 +160,6 @@ class PermanentTranspositionTable(object, metaclass=ABCMeta):
             "heuristic": value
         }
 
-        # Update existing item if exists.
         update = """
         UPDATE transposition_table
             SET
@@ -167,20 +170,23 @@ class PermanentTranspositionTable(object, metaclass=ABCMeta):
                 black_pieces=:black AND
                 turn=:turn;
         """
-        c.execute(update, parameters)
 
-        # Insert if no update occurred.
         insert = """
         INSERT INTO transposition_table
             (white_pieces, black_pieces, turn, depth_searched, heuristic)
             SELECT :white, :black, :turn, :depth, :heuristic
             WHERE (SELECT CHANGES()=0);
         """
-        c.execute(insert, parameters)
 
-        self._conn.commit()
+        with self._lock:
+            # Update existing item if exists.
+            c.execute(update, parameters)
 
-        c.close()
+            # Insert if no update occurred.
+            c.execute(insert, parameters)
+
+            self._conn.commit()
+            c.close()
 
     def __setup(self):
         """Sets up the database if it doesn't exist yet."""
@@ -192,20 +198,21 @@ class PermanentTranspositionTable(object, metaclass=ABCMeta):
             WHERE type='table' AND name='transposition_table';
         """
 
-        c.execute(check_command)
-        created = c.fetchone()
+        with self._lock:
+            c.execute(check_command)
+            created = c.fetchone()
 
-        if not created:
-            creation_command = """
-            CREATE TABLE transposition_table
-                (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                 white_pieces INTEGER NOT NULL,
-                 black_pieces INTEGER NOT NULL,
-                 turn INTEGER NOT NULL,
-                 depth_searched INTEGER,
-                 heuristic REAL);
-            """
-            c.execute(creation_command)
-            self._conn.commit()
+            if not created:
+                creation_command = """
+                CREATE TABLE transposition_table
+                    (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                     white_pieces INTEGER NOT NULL,
+                     black_pieces INTEGER NOT NULL,
+                     turn INTEGER NOT NULL,
+                     depth_searched INTEGER,
+                     heuristic REAL);
+                """
+                c.execute(creation_command)
+                self._conn.commit()
 
-        c.close()
+            c.close()

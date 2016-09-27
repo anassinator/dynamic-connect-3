@@ -97,10 +97,11 @@ def agent_vs_agent(args):
         Game connector.
     """
     weighted_heuristics = _get_weighted_heuristics()
+    transposition_table = _get_transposition_table(args)
     white_agent = AutonomousAgent(Player.white, weighted_heuristics,
-                                  _get_transposition_table(args))
+                                  transposition_table)
     black_agent = AutonomousAgent(Player.black, weighted_heuristics,
-                                  _get_transposition_table(args))
+                                  transposition_table)
     return LocalGameConnector(white_agent, black_agent, args.max_time)
 
 
