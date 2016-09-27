@@ -8,6 +8,7 @@ from base_board import Player
 from agent import AutonomousAgent
 from heuristics import WeightedHeuristic
 from game_connector import LocalGameConnector
+from transposition_table import PermanentTranspositionTable
 
 
 def generate_random_heuristics(heuristics_list):
@@ -43,8 +44,11 @@ def perturb(weighted_heuristics, prob):
 
 @asyncio.coroutine
 def play(white_heuristics, black_heuristics, board, max_time):
-    white_agent = AutonomousAgent(Player.white, white_heuristics)
-    black_agent = AutonomousAgent(Player.black, black_heuristics)
+    transposition_table = PermanentTranspositionTable("hill_climber.db")
+    white_agent = AutonomousAgent(Player.white, white_heuristics,
+                                  transposition_table)
+    black_agent = AutonomousAgent(Player.black, black_heuristics,
+                                  transposition_table)
     connector = LocalGameConnector(white_agent, black_agent, max_time)
     yield from connector.start(board)
     return connector.winner
@@ -113,12 +117,10 @@ def climb(first_heuristics, second_heuristics, board, generations=100,
 if __name__ == "__main__":
     all_heuristics = [
         heuristics.DistanceToCenterHeuristic,
-        heuristics.DistanceToGoalHeuristic,
         heuristics.GoalHeuristic,
         heuristics.NumberOfBlockedGoalsHeuristic,
         heuristics.NumberOfMovesHeuristic,
-        heuristics.NumberOfRunsOfTwoHeuristic,
-        heuristics.TurnHeuristic
+        heuristics.NumberOfRunsOfTwoHeuristic
     ]
 
     first_heuristics = generate_random_heuristics(all_heuristics)
