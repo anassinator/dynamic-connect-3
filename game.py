@@ -6,6 +6,90 @@ from base_board import Player
 from draw_tracker import DrawTracker
 
 
+class GameState(object):
+
+    """Game state."""
+
+    def __init__(self, board, turn):
+        """Constructs a GameState.
+
+        Args:
+            board: Board.
+            turn: Player's turn.
+        """
+        self.board = board
+        self.turn = turn
+        self._next_turn = (Player.black if turn == Player.white else
+                           Player.white)
+
+    def __eq__(self, other):
+        """Returns whether two game states are equal or not.
+
+        Args:
+            other: Game state to compare to.
+
+        Returns:
+            Whether the two game states are equivalent or not.
+        """
+        return (self.board._white_pieces == other.board._white_pieces and
+                self.board._black_pieces == other.board._black_pieces and
+                self.turn == other.turn)
+
+    def __hash__(self):
+        """Hashes the current game state into a unique integer.
+
+        Returns:
+            Hashed value.
+        """
+        return hash((self.board._white_pieces,
+                     self.board._black_pieces,
+                     self.turn))
+
+    def compute_heuristic(self, weighted_heuristics):
+        """Computes the weighted heuristic for the game state given.
+
+        Args:
+            weighted_heuristics: List of weighted heuristics.
+
+        Returns:
+            The estimated value of the board such that the more positive it is
+            the more in favor of the white player the board is and the more
+            negative it is, the more in favor of the black player the board is.
+            This is effectively a weighted sum of all the heuristics this agent
+            considers.
+        """
+        heuristic = 0
+        for wh in weighted_heuristics:
+            v = wh.heuristic.compute(self.board, self.turn)
+            heuristic += wh.weight * v
+        return heuristic
+
+    def won_by(self):
+        """Returns who won the current game state."""
+        if self.board.is_goal(Player.white):
+            return Player.white
+        elif self.board.is_goal(Player.black):
+            return Player.black
+        else:
+            return Player.none
+
+    def next_states(self):
+        """Yields all possible next states.
+
+        Yields:
+            Tuple of (move, resulting game state).
+        """
+        for move in self.board.available_moves(self.turn):
+            child_board = self.board.copy()
+            child_board.move(move)
+            yield (move, GameState(child_board, self._next_turn))
+
+    def copy(self):
+        """Returns a copy of the game state."""
+        return GameState(self.board.copy(), self.turn)
+
+
+
 class Game(object):
 
     """A game instance.
@@ -71,3 +155,7 @@ class Game(object):
         game.won = self.won
         game.draw = self.draw
         return game
+
+    def to_game_state(self):
+        """Returns the equivalent game state."""
+        return GameState(self.board.copy(), self.turn)

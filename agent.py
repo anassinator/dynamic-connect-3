@@ -105,6 +105,19 @@ class AutonomousAgent(Agent):
         self._searcher = AlphaBetaPrunedMinimaxSearch(player, heuristics,
                                                       transposition_table)
 
+    def update(self, move):
+        """Updates game with a given move.
+
+        Args:
+            move: Move.
+        """
+        super().update(move)
+
+        # Learn if lost.
+        winner = self._game.won
+        if winner != Player.none and winner != self.player:
+            self.learn()
+
     def yield_move(self, max_time):
         """Yields a move to play.
 
@@ -121,7 +134,7 @@ class AutonomousAgent(Agent):
 
         try:
             with timeout(max_time):
-                self._searcher.search(self._game.board.copy(), self._game.turn)
+                self._searcher.search(self._game.to_game_state())
         except TimeoutError:
             pass
         except KeyboardInterrupt:
@@ -131,3 +144,7 @@ class AutonomousAgent(Agent):
         print(move)
 
         return move
+
+    def learn(self):
+        """Learns from its mistakes."""
+        pass

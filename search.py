@@ -17,66 +17,6 @@ class NoSolutionFound(Exception):
     pass
 
 
-class GameState(object):
-
-    """Game state."""
-
-    def __init__(self, board, turn):
-        """Constructs a GameState.
-
-        Args:
-            board: Board.
-            turn: Player's turn.
-        """
-        self.board = board
-        self.turn = turn
-        self._next_turn = (Player.black if turn == Player.white else
-                           Player.white)
-
-    def __eq__(self, other):
-        """Returns whether two game states are equal or not.
-
-        Args:
-            other: Game state to compare to.
-
-        Returns:
-            Whether the two game states are equivalent or not.
-        """
-        return (self.board._white_pieces == other.board._white_pieces and
-                self.board._black_pieces == other.board._black_pieces and
-                self.turn == other.turn)
-
-    def __hash__(self):
-        """Hashes the current game state into a unique integer.
-
-        Returns:
-            Hashed value.
-        """
-        return hash((self.board._white_pieces,
-                     self.board._black_pieces,
-                     self.turn))
-
-    def won_by(self):
-        """Returns who won the current game state."""
-        if self.board.is_goal(Player.white):
-            return Player.white
-        elif self.board.is_goal(Player.black):
-            return Player.black
-        else:
-            return Player.none
-
-    def next_states(self):
-        """Yields all possible next states.
-
-        Yields:
-            Tuple of (move, resulting game state).
-        """
-        for move in self.board.available_moves(self.turn):
-            child_board = self.board.copy()
-            child_board.move(move)
-            yield (move, GameState(child_board, self._next_turn))
-
-
 class Search(object, metaclass=ABCMeta):
 
     """Asynchronous search.
@@ -96,29 +36,8 @@ class Search(object, metaclass=ABCMeta):
         self.player = player
         self.heuristics = heuristics
 
-    def _compute_heuristic(self, state):
-        """Computes the weighted heuristic for the game state given.
-
-        Args:
-            state: Game state to analyze.
-
-        Returns:
-            The estimated value of the board such that the more positive it is
-            the more in favor of the white player the board is and the more
-            negative it is, the more in favor of the black player the board is.
-            This is effectively a weighted sum of all the heuristics this agent
-            considers.
-        """
-        heuristic = 0
-        board, turn = state.board, state.turn
-
-        for wh in self.heuristics:
-            v = wh.heuristic.compute(board, turn)
-            heuristic += wh.weight * v
-        return heuristic
-
     @abstractmethod
-    def search(self, board, turn):
+    def search(self, state):
         """Starts an indefinite search from the given root board with the given
         player's turn.
 
@@ -127,8 +46,7 @@ class Search(object, metaclass=ABCMeta):
         request a move.
 
         Args:
-            board: Current board configuration.
-            turn: Current turn.
+            state: Current game state.
         """
         raise NotImplementedError
 
@@ -162,7 +80,7 @@ class MinimaxSearch(Search):
         self._depth = 0
         self._transposition_table = transposition_table
 
-    def search(self, board, turn):
+    def search(self, state):
         """Starts an indefinite search from the given root board with the given
         player's turn.
 
@@ -171,16 +89,15 @@ class MinimaxSearch(Search):
         request a move.
 
         Args:
-            board: Current board configuration.
-            turn: Current turn.
+            state: Current game state.
         """
         self._best_next_move = None
         self._moves = 0
         self._positions = 0
 
         for depth in itertools.count():
-            state = GameState(board.copy(), turn)
-            self._best_next_move, _ = self._search(state, 0, depth)
+            root = state.copy()
+            self._best_next_move, _ = self._search(root, 0, depth)
             self._depth = depth
 
     def request_move(self):
@@ -198,6 +115,18 @@ class MinimaxSearch(Search):
         else:
             raise NoSolutionFound
 
+    def _heuristics_key(self, child):
+        """Computes the weighted heuristics of a child game state.
+
+        Args:
+            child: Tuple of (move, game state).
+
+        Returns:
+            Computed heuristic.
+        """
+        _, state = child
+        return state.compute_heuristic(self.heuristics)
+
     def _search(self, state, curr_depth, max_depth):
         """Searches for the best move given the current board state by looking
         up to a certain depth.
@@ -212,19 +141,19 @@ class MinimaxSearch(Search):
         """
         if state.won_by() != Player.none:
             # Favor closer wins.
-            return (None, self._compute_heuristic(state) / curr_depth)
+            v = state.compute_heuristic(self.heuristics)
+            return (None, v / curr_depth)
         if curr_depth == max_depth:
-            return (None, self._compute_heuristic(state))
+            return (None, state.compute_heuristic(self.heuristics))
 
         best_move = None
         best_value = None
 
         if state.turn == Player.white:
-            children = sorted(state.next_states(),
-                              key=lambda x: -self._compute_heuristic(x[1]))
+            children = sorted(state.next_states(), key=self._heuristics_key,
+                              reverse=True)
         else:
-            children = sorted(state.next_states(),
-                              key=lambda x: self._compute_heuristic(x[1]))
+            children = sorted(state.next_states(), key=self._heuristics_key)
 
         depth_to_search = max_depth - curr_depth
         for move, child in children:
@@ -289,19 +218,19 @@ class AlphaBetaPrunedMinimaxSearch(MinimaxSearch):
         """
         if state.won_by() != Player.none:
             # Favor closer wins.
-            return (None, self._compute_heuristic(state) / curr_depth)
+            v = state.compute_heuristic(self.heuristics)
+            return (None, v / curr_depth)
         if curr_depth == max_depth:
-            return (None, self._compute_heuristic(state))
+            return (None, state.compute_heuristic(self.heuristics))
 
         best_move = None
         best_value = None
 
         if state.turn == Player.white:
-            children = sorted(state.next_states(),
-                              key=lambda x: -self._compute_heuristic(x[1]))
+            children = sorted(state.next_states(), key=self._heuristics_key,
+                              reverse=True)
         else:
-            children = sorted(state.next_states(),
-                              key=lambda x: self._compute_heuristic(x[1]))
+            children = sorted(state.next_states(), key=self._heuristics_key)
 
         depth_to_search = max_depth - curr_depth
         for move, child in children:
