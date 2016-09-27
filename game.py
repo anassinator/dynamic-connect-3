@@ -28,6 +28,7 @@ class Game(object):
         self.turn = Player.white
         self.won = Player.none
         self.draw = False
+        self.moves = []
 
         if draw_tracker is None:
             self._draw_tracker = DrawTracker()
@@ -48,6 +49,8 @@ class Game(object):
             raise InvalidMove("Not your turn")
 
         self.board.move(move)
+        self.moves.append(move)
+
         if self.board.is_goal(self.turn):
             self.won = self.turn
 
