@@ -3,6 +3,7 @@
 import itertools
 from base_board import Player
 from abc import ABCMeta, abstractmethod
+from transposition_table import TemporaryTranspositionTable
 
 try:
     from math import inf
@@ -159,8 +160,7 @@ class MinimaxSearch(Search):
         super().__init__(player, heuristics)
         self._best_move_yet = None
         self._depth = 0
-        self._positions = 0
-        self._transposition_table = dict()
+        self._transposition_table = TemporaryTranspositionTable()
 
     def search(self, board, turn):
         """Starts an indefinite search from the given root board with the given
@@ -180,9 +180,7 @@ class MinimaxSearch(Search):
 
         for depth in itertools.count():
             state = GameState(board.copy(), turn)
-            old_positions = len(self._transposition_table)
             self._best_next_move, _ = self._search(state, 0, depth)
-            self._positions += len(self._transposition_table) - old_positions
             self._depth = depth
 
     def request_move(self):
@@ -195,10 +193,7 @@ class MinimaxSearch(Search):
             NoSolutionFound: If no solution has been found yet.
         """
         if self._best_next_move:
-            s = ("Considered {} new positions ({} total) up to {} moves deep: "
-                 .format(self._positions, len(self._transposition_table),
-                         self._depth))
-            print(s, end="")
+            print("Searched  up to {} moves deep: ".format(self._depth))
             return self._best_next_move
         else:
             raise NoSolutionFound
