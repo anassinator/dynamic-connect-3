@@ -22,8 +22,7 @@ def _get_weighted_heuristics():
         WeightedHeuristic(heuristics.DistanceToCenterHeuristic, 5),
         WeightedHeuristic(heuristics.NumberOfBlockedGoalsHeuristic, 10),
         WeightedHeuristic(heuristics.NumberOfMovesHeuristic, 0.1),
-        WeightedHeuristic(heuristics.NumberOfRunsOfTwoHeuristic, 1),
-        WeightedHeuristic(heuristics.TurnHeuristic, 2)
+        WeightedHeuristic(heuristics.NumberOfRunsOfTwoHeuristic, 1)
     ]
 
 
