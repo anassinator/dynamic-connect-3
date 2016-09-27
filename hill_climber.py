@@ -118,8 +118,6 @@ if __name__ == "__main__":
     all_heuristics = [
         heuristics.DistanceToCenterHeuristic,
         heuristics.GoalHeuristic,
-        heuristics.NumberOfBlockedGoalsHeuristic,
-        heuristics.NumberOfMovesHeuristic,
         heuristics.NumberOfRunsOfTwoHeuristic
     ]
 
