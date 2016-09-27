@@ -4,11 +4,33 @@
 import asyncio
 import argparse
 import heuristics
+import transposition_table
 from base_board import Player
 from heuristics import WeightedHeuristic
 from board import SmallBoard, LargeBoard
 from agent import HumanAgent, AutonomousAgent
 from game_connector import LocalGameConnector, RemoteGameConnector
+
+
+def _get_transposition_table(args):
+    """Gets transposition table to use.
+
+    Args:
+        args: Command-line arguments.
+
+    Returns:
+        TranspositionTable.
+    """
+    if args.no_db:
+        return transposition_table.TemporaryTranspositionTable()
+
+    filename = "connect3_small.db"
+    if args.board == LargeBoard:
+        filename = "connect3_large.db"
+    if args.db:
+        filename = args.db
+
+    return transposition_table.PermanentTranspositionTable(filename)
 
 
 def _get_weighted_heuristics():
@@ -50,11 +72,14 @@ def player_vs_agent(args):
         Game connector.
     """
     weighted_heuristics = _get_weighted_heuristics()
+    transposition_table = _get_transposition_table(args)
     if args.player == Player.white:
         white_agent = HumanAgent(Player.white)
-        black_agent = AutonomousAgent(Player.black, weighted_heuristics)
+        black_agent = AutonomousAgent(Player.black, weighted_heuristics,
+                                      transposition_table)
     elif args.player == Player.black:
-        white_agent = AutonomousAgent(Player.white, weighted_heuristics)
+        white_agent = AutonomousAgent(Player.white, weighted_heuristics,
+                                      transposition_table)
         black_agent = HumanAgent(Player.black)
     else:
         raise NotImplementedError
@@ -72,8 +97,10 @@ def agent_vs_agent(args):
         Game connector.
     """
     weighted_heuristics = _get_weighted_heuristics()
-    white_agent = AutonomousAgent(Player.white, weighted_heuristics)
-    black_agent = AutonomousAgent(Player.black, weighted_heuristics)
+    white_agent = AutonomousAgent(Player.white, weighted_heuristics,
+                                  _get_transposition_table(args))
+    black_agent = AutonomousAgent(Player.black, weighted_heuristics,
+                                  _get_transposition_table(args))
     return LocalGameConnector(white_agent, black_agent, args.max_time)
 
 
@@ -90,7 +117,8 @@ def play_vs_remote(args):
     if args.human:
         agent = HumanAgent(args.player)
     else:
-        agent = AutonomousAgent(args.player, _get_weighted_heuristics())
+        agent = AutonomousAgent(args.player, _get_weighted_heuristics(),
+                                _get_transposition_table(args))
     return RemoteGameConnector(agent, args.max_time, args.id,
                                args.hostname, args.port, loop)
 
@@ -110,6 +138,10 @@ def parse_args():
                                help="play on larger 7x6 board")
         subparser.add_argument("--max-time", default=9, type=int,
                                help="max time to make a move in seconds")
+        subparser.add_argument("--no-db", default=False, action="store_true",
+                               help="do not use database to speed things up")
+        subparser.add_argument("--db", default=None,
+                               help="use custom database")
 
     # Player vs player play.
     pvp = subparsers.add_parser("pvp", help="play human vs human")

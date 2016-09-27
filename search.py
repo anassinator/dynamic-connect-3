@@ -3,7 +3,6 @@
 import itertools
 from base_board import Player
 from abc import ABCMeta, abstractmethod
-from transposition_table import TemporaryTranspositionTable
 
 try:
     from math import inf
@@ -150,17 +149,18 @@ class MinimaxSearch(Search):
 
     """Asynchronous minimax search."""
 
-    def __init__(self, player, heuristics):
+    def __init__(self, player, heuristics, transposition_table):
         """Constructs a Search using the provided heuristics.
 
         Args:
             player: Player to search for.
             heuristics: List of weighted heuristics to use.
+            transposition_table: Transposition table.
         """
         super().__init__(player, heuristics)
         self._best_move_yet = None
         self._depth = 0
-        self._transposition_table = TemporaryTranspositionTable()
+        self._transposition_table = transposition_table
 
     def search(self, board, turn):
         """Starts an indefinite search from the given root board with the given
@@ -193,7 +193,7 @@ class MinimaxSearch(Search):
             NoSolutionFound: If no solution has been found yet.
         """
         if self._best_next_move:
-            print("Searched  up to {} moves deep: ".format(self._depth))
+            print("Searched up to {} moves deep: ".format(self._depth))
             return self._best_next_move
         else:
             raise NoSolutionFound
@@ -316,6 +316,9 @@ class AlphaBetaPrunedMinimaxSearch(MinimaxSearch):
             if self._minimax_comparator(best_value, v, state.turn):
                 best_move = move
                 best_value = v
+
+            if curr_depth == 0:
+                print(max_depth, str(move), v, str(best_move))
 
             if best_value is not None and state.turn == Player.white:
                 alpha = max(alpha, best_value)

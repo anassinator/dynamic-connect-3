@@ -92,16 +92,18 @@ class AutonomousAgent(Agent):
         player: Acting player.
     """
 
-    def __init__(self, player, heuristics):
+    def __init__(self, player, heuristics, transposition_table):
         """Constructs an AutonomousAgent.
 
         Args:
             player: Player to play as.
             heuristics: List of weighted heuristics to use.
+            transposition_table: Transposition table.
         """
         super().__init__(player)
         self._heuristics = heuristics
-        self._searcher = AlphaBetaPrunedMinimaxSearch(player, heuristics)
+        self._searcher = AlphaBetaPrunedMinimaxSearch(player, heuristics,
+                                                      transposition_table)
 
     def yield_move(self, max_time):
         """Yields a move to play.
