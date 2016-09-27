@@ -44,7 +44,7 @@ class TranspositionTable(object, metaclass=ABCMeta):
         raise NotImplementedError
 
 
-class TemporaryTranspositionTable(object, metaclass=ABCMeta):
+class TemporaryTranspositionTable(object):
 
     """Transposition table stored in memory."""
 
@@ -61,7 +61,11 @@ class TemporaryTranspositionTable(object, metaclass=ABCMeta):
         Returns:
             Whether the key is stored in the table or not.
         """
-        return key in self._table
+        try:
+            self[key]
+            return True
+        except KeyError:
+            return False
 
     def __getitem__(self, key):
         """Returns the value in the table corresponding to a given key.
@@ -72,7 +76,12 @@ class TemporaryTranspositionTable(object, metaclass=ABCMeta):
         Returns:
             The corresponding value.
         """
-        return self._table[key]
+        state, depth_to_search = key
+        depth_searched, heuristic = self._table[state]
+        if depth_searched >= depth_to_search:
+            return heuristic
+        else:
+            raise KeyError
 
     def __setitem__(self, key, value):
         """Sets value in the table to given key.
@@ -81,10 +90,11 @@ class TemporaryTranspositionTable(object, metaclass=ABCMeta):
             key: Key.
             value: Value.
         """
-        self._table[key] = value
+        state, depth_searched = key
+        self._table[state] = (depth_searched, value)
 
 
-class PermanentTranspositionTable(object, metaclass=ABCMeta):
+class PermanentTranspositionTable(object):
 
     """Transposition table stored in database."""
 
@@ -96,6 +106,7 @@ class PermanentTranspositionTable(object, metaclass=ABCMeta):
         """
         self._lock = Lock()
         self._conn = sqlite3.connect(filename)
+        self._cache = TemporaryTranspositionTable()
         self.__setup()
 
     def __contains__(self, key):
@@ -107,7 +118,11 @@ class PermanentTranspositionTable(object, metaclass=ABCMeta):
         Returns:
             Whether the key is stored in the table or not.
         """
-        return self[key] is not None
+        try:
+            self[key]
+            return True
+        except KeyError:
+            return False
 
     def __getitem__(self, key):
         """Returns the value in the table corresponding to a given key.
@@ -118,6 +133,9 @@ class PermanentTranspositionTable(object, metaclass=ABCMeta):
         Returns:
             The corresponding value.
         """
+        if key in self._cache:
+            return self._cache[key]
+
         state, depth_searched = key
         s = """
         SELECT heuristic FROM transposition_table
@@ -139,8 +157,13 @@ class PermanentTranspositionTable(object, metaclass=ABCMeta):
             c.execute(s, parameters)
             result = c.fetchone()
             c.close()
-            
-        return result[0] if result is not None else None
+
+        if result is None:
+            raise KeyError
+
+        heuristic = result[0]
+        self._cache[key] = heuristic
+        return heuristic
 
     def __setitem__(self, key, value):
         """Sets value in the table to given key.
@@ -149,6 +172,7 @@ class PermanentTranspositionTable(object, metaclass=ABCMeta):
             key: Game state.
             value: Value.
         """
+        self._cache[key] = value
         state, depth_searched = key
 
         c = self._conn.cursor()
