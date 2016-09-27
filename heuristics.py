@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import random
 from math import isnan
 from base_board import Player
 from abc import ABCMeta, abstractmethod
@@ -65,8 +66,8 @@ class GoalHeuristic(Heuristic):
             player: Current player.
 
         Returns:
-            A white win is represented as +inf and a black win is represented
-            as -inf. Anything else returns 0.
+            A white win is represented as +1000 and a black win is represented
+            as -1000. Anything else returns 0.
         """
         if board.is_goal(Player.white):
             return 1000.0
@@ -74,6 +75,24 @@ class GoalHeuristic(Heuristic):
             return -1000.0
 
         return 0
+
+
+class RandomHeuristic(Heuristic):
+
+    """A heuristic based on randomness."""
+
+    @classmethod
+    def compute(cls, board, player):
+        """Computes the heuristic's value for a given game state.
+
+        Args:
+            board: Current board.
+            player: Current player.
+
+        Returns:
+            A random number between -1 and 1.
+        """
+        return 2 * (random.random() - 0.5)
 
 
 class NumberOfRunsOfTwoHeuristic(Heuristic):

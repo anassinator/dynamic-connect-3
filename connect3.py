@@ -33,17 +33,25 @@ def _get_transposition_table(args):
     return transposition_table.PermanentTranspositionTable(filename)
 
 
-def _get_weighted_heuristics():
+def _get_weighted_heuristics(args):
     """Gets a list of weighted heuristics for an autonomous agent to use.
+
+    Args:
+        args: Command-line arguments.
 
     Returns:
         List of weighted heuristics.
     """
-    return [
+    wh = [
         WeightedHeuristic(heuristics.GoalHeuristic, 100),
         WeightedHeuristic(heuristics.DistanceToCenterHeuristic, 5),
         WeightedHeuristic(heuristics.NumberOfRunsOfTwoHeuristic, 1)
     ]
+
+    if args.random:
+        wh.append(WeightedHeuristic(heuristics.RandomHeuristic, 0.1))
+
+    return wh
 
 
 def player_vs_player(args):
@@ -69,7 +77,7 @@ def player_vs_agent(args):
     Returns:
         Game connector.
     """
-    weighted_heuristics = _get_weighted_heuristics()
+    weighted_heuristics = _get_weighted_heuristics(args)
     transposition_table = _get_transposition_table(args)
     if args.player == Player.white:
         white_agent = HumanAgent(Player.white)
@@ -94,7 +102,7 @@ def agent_vs_agent(args):
     Returns:
         Game connector.
     """
-    weighted_heuristics = _get_weighted_heuristics()
+    weighted_heuristics = _get_weighted_heuristics(args)
     transposition_table = _get_transposition_table(args)
     white_agent = AutonomousAgent(Player.white, weighted_heuristics,
                                   transposition_table)
@@ -116,7 +124,7 @@ def play_vs_remote(args):
     if args.human:
         agent = HumanAgent(args.player)
     else:
-        agent = AutonomousAgent(args.player, _get_weighted_heuristics(),
+        agent = AutonomousAgent(args.player, _get_weighted_heuristics(args),
                                 _get_transposition_table(args))
     return RemoteGameConnector(agent, args.max_time, args.id,
                                args.hostname, args.port, loop)
@@ -137,10 +145,14 @@ def parse_args():
                                help="play on larger 7x6 board")
         subparser.add_argument("--max-time", default=9, type=int,
                                help="max time to make a move in seconds")
+
+    def add_agent_arguments(subparser):
         subparser.add_argument("--no-db", default=False, action="store_true",
                                help="do not use database to speed things up")
         subparser.add_argument("--db", default=None,
                                help="use custom database")
+        subparser.add_argument("--random", default=False, action="store_true",
+                               help="randomly choose between equivalent moves")
 
     # Player vs player play.
     pvp = subparsers.add_parser("pvp", help="play human vs human")
@@ -150,6 +162,7 @@ def parse_args():
     # Player vs agent play.
     pve = subparsers.add_parser("pve", help="play human vs computer")
     add_shared_arguments(pve)
+    add_agent_arguments(pve)
     pve.add_argument("--black", dest="player", const=Player.black,
                      default=Player.white, action="store_const",
                      help="play as black (default: white)")
@@ -159,6 +172,7 @@ def parse_args():
     agents = subparsers.add_parser("watch",
                                    help="watch the computer play itself")
     add_shared_arguments(agents)
+    add_agent_arguments(agents)
     agents.set_defaults(func=agent_vs_agent)
 
     # Remote play.
@@ -168,6 +182,7 @@ def parse_args():
     remote.add_argument("port", type=int, help="port of remote server")
     remote.add_argument("id", help="game ID")
     add_shared_arguments(remote)
+    add_agent_arguments(remote)
     remote.add_argument("--black", dest="player", const=Player.black,
                         default=Player.white, action="store_const",
                         help="play as black (default: white)")
