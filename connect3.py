@@ -195,7 +195,7 @@ def train(args):
                     if player == Player.none:
                         print("Draw: {}".format(winners[player]))
                     else:
-                        print("{} won:".format(player.name.capitalize(),
+                        print("{} won: {}".format(player.name.capitalize(),
                                                winners[player]))
                 return
 
