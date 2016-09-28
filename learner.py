@@ -79,6 +79,9 @@ class Learner(object):
             the current player's turn or not.
         """
         for move, child in state.next_states():
+            if (child, 0) not in self._transposition_table:
+                continue
+
             v = self._transposition_table[(child, 0)]
             if state.turn == Player.white:
                 if v > -1000:
