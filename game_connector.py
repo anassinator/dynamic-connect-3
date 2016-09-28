@@ -269,6 +269,7 @@ class RemoteGameConnector(GameConnector):
         """
         self._agent = agent
         self._max_time = max_time
+        self._learn = learn
 
         self._game_id = game_id
         self._hostname = hostname
