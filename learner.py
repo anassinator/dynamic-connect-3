@@ -9,7 +9,7 @@ class Learner(object):
     """Learns from a game to find mistakes and unavoidable pitfalls."""
 
     def __init__(self, root_board, moves, weighted_heuristics,
-                 transposition_table):
+                 transposition_table, winner):
         """Constructs a Learner.
 
         Args:
@@ -17,11 +17,14 @@ class Learner(object):
             moves: Ordered list of moves played.
             weighted_heuristics: List of weighted heuristics to use.
             transposition_table: Transposition table.
+            winner: Player who won.
         """
         self._root_board = root_board
         self._moves = moves
         self._heuristics = weighted_heuristics
         self._transposition_table = transposition_table
+        self._winner = winner
+        self._loser = Player(1 - winner.value)
 
     def learn(self):
         """Learns."""
@@ -31,7 +34,7 @@ class Learner(object):
         first_unavoidable_death = None
         game_states = list(self._all_game_states())
         for i, state in reversed(list(enumerate(game_states))):
-            if state.turn != Player.none and i > 0:
+            if state.turn == self._loser and i > 0:
                 if self._is_mistake(state):
                     first_unavoidable_death = i
                     print("Found unavoidable death at state: {}, turn: {}"
@@ -39,10 +42,10 @@ class Learner(object):
                     print(state.board)
 
         # Find cause and fix its heuristic.
-        if first_unavoidable_death and first_unavoidable_death > 2:
-            mistake = first_unavoidable_death - 2
+        if first_unavoidable_death and first_unavoidable_death > 0:
+            mistake = first_unavoidable_death - 1
 
-            cause = game_states[mistake + 1]
+            cause = game_states[mistake]
             effect = game_states[first_unavoidable_death]
 
             print("Found mistake at move: {}, {}"

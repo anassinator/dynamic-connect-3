@@ -153,5 +153,6 @@ class AutonomousAgent(Agent):
     def learn_from_mistakes(self):
         """Learns from its mistakes."""
         learner = Learner(self._root_board.copy(), self._game.moves,
-                          self._heuristics, self._transposition_table)
+                          self._heuristics, self._transposition_table,
+                          self._game.won)
         learner.learn()
