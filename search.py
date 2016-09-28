@@ -67,18 +67,21 @@ class MinimaxSearch(Search):
 
     """Asynchronous minimax search."""
 
-    def __init__(self, player, heuristics, transposition_table):
+    def __init__(self, player, heuristics, transposition_table,
+                 max_depth=None):
         """Constructs a Search using the provided heuristics.
 
         Args:
             player: Player to search for.
             heuristics: List of weighted heuristics to use.
             transposition_table: Transposition table.
+            max_depth: Max depth to search. Infinite if none.
         """
         super().__init__(player, heuristics)
         self._best_move_yet = None
         self._depth = 0
         self._transposition_table = transposition_table
+        self._max_depth = max_depth
 
     def search(self, state):
         """Starts an indefinite search from the given root board with the given
@@ -96,6 +99,9 @@ class MinimaxSearch(Search):
         self._positions = 0
 
         for depth in itertools.count():
+            if self._max_depth and depth > self._max_depth:
+                return
+
             root = state.copy()
             self._best_next_move, value = self._search(root, 0, depth)
             self._depth = depth

@@ -5,7 +5,6 @@ from timeout import timeout
 from base_board import Player
 from move import Move, PlayerResigned
 from abc import ABCMeta, abstractmethod
-from search import AlphaBetaPrunedMinimaxSearch
 
 
 class Agent(object, metaclass=ABCMeta):
@@ -94,13 +93,16 @@ class AutonomousAgent(Agent):
         player: Acting player.
     """
 
-    def __init__(self, player, heuristics, transposition_table, resigns=True):
+    def __init__(self, player, heuristics, transposition_table, searcher,
+                 max_depth=None, resigns=True):
         """Constructs an AutonomousAgent.
 
         Args:
             player: Player to play as.
             heuristics: List of weighted heuristics to use.
             transposition_table: Transposition table.
+            searcher: Searcher class to use.
+            max_depth: Max depth to search for.
             resigns: Whether keyboard interrupts should be caught as
                 resignations or not.
         """
@@ -108,8 +110,8 @@ class AutonomousAgent(Agent):
         self._heuristics = heuristics
         self._transposition_table = transposition_table
         self._resigns = resigns
-        self._searcher = AlphaBetaPrunedMinimaxSearch(player, heuristics,
-                                                      transposition_table)
+        self._searcher = searcher(player, heuristics, transposition_table,
+                                  max_depth)
 
     def update(self, move):
         """Updates game with a given move.

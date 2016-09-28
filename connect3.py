@@ -11,7 +11,22 @@ from collections import Counter
 from heuristics import WeightedHeuristic
 from board import SmallBoard, LargeBoard
 from agent import HumanAgent, AutonomousAgent
+from search import AlphaBetaPrunedMinimaxSearch, MinimaxSearch
 from game_connector import LocalGameConnector, RemoteGameConnector
+
+
+def _get_searcher(args):
+    """Gets a searcher.
+
+    Args:
+        args: Command-line arguments.
+
+    Returns:
+        Searcher to use.
+    """
+    if args.no_alpha_beta:
+        return MinimaxSearch
+    return AlphaBetaPrunedMinimaxSearch
 
 
 def _get_transposition_table(args):
@@ -23,6 +38,9 @@ def _get_transposition_table(args):
     Returns:
         TranspositionTable.
     """
+    if args.no_table:
+        return transposition_table.EmptyTranspositionTable()
+
     if args.no_db:
         return transposition_table.TemporaryTranspositionTable()
 
@@ -67,8 +85,7 @@ def player_vs_player(args):
     """
     white_agent = HumanAgent(Player.white)
     black_agent = HumanAgent(Player.black)
-    return LocalGameConnector(white_agent, black_agent, args.max_time,
-                              args.learn)
+    return LocalGameConnector(white_agent, black_agent, args.max_time, False)
 
 
 def player_vs_agent(args):
@@ -82,13 +99,16 @@ def player_vs_agent(args):
     """
     weighted_heuristics = _get_weighted_heuristics(args)
     transposition_table = _get_transposition_table(args)
+    searcher = _get_searcher(args)
     if args.player == Player.white:
         white_agent = HumanAgent(Player.white)
         black_agent = AutonomousAgent(Player.black, weighted_heuristics,
-                                      transposition_table)
+                                      transposition_table, searcher,
+                                      args.max_depth)
     elif args.player == Player.black:
         white_agent = AutonomousAgent(Player.white, weighted_heuristics,
-                                      transposition_table)
+                                      transposition_table, searcher,
+                                      args.max_depth)
         black_agent = HumanAgent(Player.black)
     else:
         raise NotImplementedError
@@ -107,10 +127,13 @@ def agent_vs_agent(args):
     """
     weighted_heuristics = _get_weighted_heuristics(args)
     transposition_table = _get_transposition_table(args)
+    searcher = _get_searcher(args)
     white_agent = AutonomousAgent(Player.white, weighted_heuristics,
-                                  transposition_table)
+                                  transposition_table, searcher,
+                                  args.max_depth)
     black_agent = AutonomousAgent(Player.black, weighted_heuristics,
-                                  transposition_table)
+                                  transposition_table, searcher,
+                                  args.max_depth)
     return LocalGameConnector(white_agent, black_agent, args.max_time,
                               args.learn)
 
@@ -126,6 +149,7 @@ def train(args):
     """
     weighted_heuristics = _get_weighted_heuristics(args)
     transposition_table = _get_transposition_table(args)
+    searcher = _get_searcher(args)
 
     class TrainingGameConnector(object):
 
@@ -146,10 +170,14 @@ def train(args):
                     print("Starting game #{}.".format(game_num))
                     white_agent = AutonomousAgent(Player.white,
                                                   weighted_heuristics,
-                                                  transposition_table, False)
+                                                  transposition_table,
+                                                  searcher, args.max_depth,
+                                                  False)
                     black_agent = AutonomousAgent(Player.black,
                                                   weighted_heuristics,
-                                                  transposition_table, False)
+                                                  transposition_table,
+                                                  searcher, args.max_depth,
+                                                  False)
                     connector = LocalGameConnector(white_agent, black_agent,
                                                    max_time, args.learn)
                     yield from connector.start(board_class)
@@ -188,7 +216,8 @@ def play_vs_remote(args):
         agent = HumanAgent(args.player)
     else:
         agent = AutonomousAgent(args.player, _get_weighted_heuristics(args),
-                                _get_transposition_table(args))
+                                _get_transposition_table(args),
+                                _get_searcher(args), args.max_depth)
     return RemoteGameConnector(agent, args.max_time, args.learn, args.id,
                                args.hostname, args.port, loop)
 
@@ -210,13 +239,21 @@ def parse_args():
                                help="max time to make a move in seconds")
 
     def add_agent_arguments(subparser):
+        subparser.add_argument("--no-table", default=False,
+                               action="store_true",
+                               help="don't use a transposition table")
+        subparser.add_argument("--no-alpha-beta", default=False,
+                               action="store_true",
+                               help="don't use alpha-beta pruning")
+        subparser.add_argument("--max-depth", default=None, type=int,
+                               help="limit search depth")
         subparser.add_argument("--no-db", default=False, action="store_true",
                                help="do not use database to speed things up")
         subparser.add_argument("--db", default=None,
                                help="use custom database")
         subparser.add_argument("--no-learn", dest="learn", default=True,
                                action="store_false",
-                               help="whether to learn from mistakes or not")
+                               help="don't learn from mistakes")
         subparser.add_argument("--random", default=False, action="store_true",
                                help="randomly choose between equivalent moves")
 

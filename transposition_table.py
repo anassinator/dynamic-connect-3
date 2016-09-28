@@ -55,6 +55,52 @@ class TranspositionTable(object, metaclass=ABCMeta):
         raise NotImplementedError
 
 
+class EmptyTranspositionTable(object, metaclass=ABCMeta):
+
+    """Empty transposition table."""
+
+    def __contains__(self, key):
+        """Returns whether a key is contained in the table or not.
+
+        Args:
+            key: Key.
+
+        Returns:
+            Whether the key is stored in the table or not.
+        """
+        return False
+
+    def __getitem__(self, key):
+        """Returns the value in the table corresponding to a given key.
+
+        Args:
+            key: Key.
+
+        Returns:
+            The corresponding value.
+        """
+        raise KeyError
+
+    def __setitem__(self, key, value):
+        """Sets value in the table to given key.
+
+        Args:
+            key: Key.
+            value: Value.
+        """
+        pass
+
+    def _update_heuristic(self, state, heuristic):
+        """Updates the heuristic value in the table without updating the depth
+        searched.
+
+        Args:
+            state: Game state.
+            heuristic: Heuristic value.
+        """
+        pass
+
+
 class TemporaryTranspositionTable(object):
 
     """Transposition table stored in memory."""
