@@ -42,10 +42,16 @@ class Learner(object):
                     print(state.board)
 
         # Find cause and fix its heuristic.
-        if first_unavoidable_death and first_unavoidable_death > 0:
-            mistake = first_unavoidable_death - 1
+        if first_unavoidable_death:
+            if first_unavoidable_death < 2:
+                if self._winner == Player.white:
+                    mistake = 0
+                elif self._winner == Player.black:
+                    mistake = 1
+            else:
+                mistake = first_unavoidable_death - 2
 
-            cause = game_states[mistake]
+            cause = game_states[mistake + 1]
             effect = game_states[first_unavoidable_death]
 
             print("Found mistake at move: {}, {}"
