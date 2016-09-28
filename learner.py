@@ -59,7 +59,8 @@ class Learner(object):
             print("Previous cause heuristic: {}".format(cause_heuristic))
 
             new_heuristic = effect_heuristic / 2
-            if new_heuristic == cause_heuristic:
+            if (new_heuristic == cause_heuristic or
+                    cause_heuristic == effect_heuristic):
                 new_heuristic = effect_heuristic
 
             print("Setting heuristic to: {}".format(new_heuristic))
