@@ -97,8 +97,10 @@ class MinimaxSearch(Search):
 
         for depth in itertools.count():
             root = state.copy()
-            self._best_next_move, _ = self._search(root, 0, depth)
+            self._best_next_move, value = self._search(root, 0, depth)
             self._depth = depth
+            if (root, depth) not in self._transposition_table:
+                self._transposition_table[(root, depth)] = value
 
     def request_move(self):
         """Requests the current best solution.

@@ -4,6 +4,7 @@ import sys
 import asyncio
 from game import Game
 from base_board import Player
+from agent import AutonomousAgent
 from abc import ABCMeta, abstractmethod
 from move import Move, InvalidMove, PlayerResigned
 
@@ -159,17 +160,19 @@ class LocalGameConnector(GameConnector):
 
     """Local multi-agent game connector."""
 
-    def __init__(self, white_agent, black_agent, max_time):
+    def __init__(self, white_agent, black_agent, max_time, learn):
         """Constructs a GameConnector from two opposing agents.
 
         Args:
             white_agent: White agent.
             black_agent: Black agent.
             max_time: Max time for an agent to come up with a move in seconds.
+            learn: Whether to try learning from mistakes or not.
         """
         self._white_agent = white_agent
         self._black_agent = black_agent
         self._max_time = max_time
+        self._learn = learn
 
         if white_agent.player == black_agent.player:
             player = white_agent.player
@@ -219,6 +222,32 @@ class LocalGameConnector(GameConnector):
         self._white_agent.update(move)
         self._black_agent.update(move)
 
+    def on_win(self, board, player):
+        """Called when the game was won.
+
+        Args:
+            board: Current board.
+            player: Player who win.
+        """
+        super().on_win(board, player)
+
+        if not self._learn:
+            return
+
+        # Learn from mistakes.
+        white_is_autonomous = isinstance(self._white_agent, AutonomousAgent)
+        black_is_autonomous = isinstance(self._black_agent, AutonomousAgent)
+
+        if white_is_autonomous and black_is_autonomous:
+            if player == Player.white:
+                self._black_agent.learn_from_mistakes()
+            elif player == Player.black:
+                self._white_agent.learn_from_mistakes()
+        elif white_is_autonomous:
+            self._white_agent.learn_from_mistakes()
+        elif black_is_autonomous:
+            self._black_agent.learn_from_mistakes()
+
 
 class RemoteGameConnector(GameConnector):
 
@@ -226,12 +255,13 @@ class RemoteGameConnector(GameConnector):
 
     BUFFERSIZE = 1024
 
-    def __init__(self, agent, max_time, game_id, hostname, port, loop):
+    def __init__(self, agent, max_time, learn, game_id, hostname, port, loop):
         """Constructs a RemoteGameConnector using given agent as a local player..
 
         Args:
             agent: Black agent.
             max_time: Max time for an agent to come up with a move in seconds.
+            learn: Whether to learn from mistakes or not.
             game_id: Remote game ID.
             hostname: Hostname of remote server.
             port: Port of remote server.
@@ -341,3 +371,19 @@ class RemoteGameConnector(GameConnector):
             move: Move played.
         """
         self._agent.update(move)
+
+    def on_win(self, board, player):
+        """Called when the game was won.
+
+        Args:
+            board: Current board.
+            player: Player who win.
+        """
+        super().on_win(board, player)
+
+        if not self._learn:
+            return
+
+        # Learn from mistakes.
+        if isinstance(self._agent, AutonomousAgent):
+            self._agent.learn_from_mistakes()

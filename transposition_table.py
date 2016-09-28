@@ -43,6 +43,17 @@ class TranspositionTable(object, metaclass=ABCMeta):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def _update_heuristic(self, state, heuristic):
+        """Updates the heuristic value in the table without updating the depth
+        searched.
+
+        Args:
+            state: Game state.
+            heuristic: Heuristic value.
+        """
+        raise NotImplementedError
+
 
 class TemporaryTranspositionTable(object):
 
@@ -92,6 +103,17 @@ class TemporaryTranspositionTable(object):
         """
         state, depth_searched = key
         self._table[state] = (depth_searched, value)
+
+    def _update_heuristic(self, state, heuristic):
+        """Updates the heuristic value in the table without updating the depth
+        searched.
+
+        Args:
+            state: Game state.
+            heuristic: Heuristic value.
+        """
+        depth_searched, _ = self._table[state]
+        self._table[state] = (depth_searched, heuristic)
 
 
 class PermanentTranspositionTable(object):
@@ -209,6 +231,39 @@ class PermanentTranspositionTable(object):
             # Insert if no update occurred.
             c.execute(insert, parameters)
 
+            self._conn.commit()
+            c.close()
+
+    def _update_heuristic(self, state, heuristic):
+        """Updates the heuristic value in the table without updating the depth
+        searched.
+
+        Args:
+            state: Game state.
+            heuristic: Heuristic value.
+        """
+        self._cache._update_heuristic(state, heuristic)
+
+        c = self._conn.cursor()
+        parameters = {
+            "white": state.board._white_pieces,
+            "black": state.board._black_pieces,
+            "turn": state.turn.value,
+            "heuristic": heuristic
+        }
+
+        update = """
+        UPDATE transposition_table
+            SET
+                heuristic=:heuristic
+            WHERE
+                white_pieces=:white AND
+                black_pieces=:black AND
+                turn=:turn;
+        """
+
+        with self._lock:
+            c.execute(update, parameters)
             self._conn.commit()
             c.close()
 

@@ -65,7 +65,8 @@ def player_vs_player(args):
     """
     white_agent = HumanAgent(Player.white)
     black_agent = HumanAgent(Player.black)
-    return LocalGameConnector(white_agent, black_agent, args.max_time)
+    return LocalGameConnector(white_agent, black_agent, args.max_time,
+                              args.learn)
 
 
 def player_vs_agent(args):
@@ -90,7 +91,7 @@ def player_vs_agent(args):
     else:
         raise NotImplementedError
 
-    return LocalGameConnector(white_agent, black_agent, args.max_time)
+    return LocalGameConnector(white_agent, black_agent, args.max_time, False)
 
 
 def agent_vs_agent(args):
@@ -108,7 +109,8 @@ def agent_vs_agent(args):
                                   transposition_table)
     black_agent = AutonomousAgent(Player.black, weighted_heuristics,
                                   transposition_table)
-    return LocalGameConnector(white_agent, black_agent, args.max_time)
+    return LocalGameConnector(white_agent, black_agent, args.max_time,
+                              args.learn)
 
 
 def play_vs_remote(args):
@@ -126,7 +128,7 @@ def play_vs_remote(args):
     else:
         agent = AutonomousAgent(args.player, _get_weighted_heuristics(args),
                                 _get_transposition_table(args))
-    return RemoteGameConnector(agent, args.max_time, args.id,
+    return RemoteGameConnector(agent, args.max_time, args.learn, args.id,
                                args.hostname, args.port, loop)
 
 
@@ -151,6 +153,9 @@ def parse_args():
                                help="do not use database to speed things up")
         subparser.add_argument("--db", default=None,
                                help="use custom database")
+        subparser.add_argument("--no-learn", dest="learn", default=True,
+                               action="store_false",
+                               help="whether to learn from mistakes or not")
         subparser.add_argument("--random", default=False, action="store_true",
                                help="randomly choose between equivalent moves")
 

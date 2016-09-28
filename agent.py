@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import sys
+from learner import Learner
 from timeout import timeout
 from base_board import Player
 from move import Move, PlayerResigned
@@ -27,6 +27,7 @@ class Agent(object, metaclass=ABCMeta):
 
         self.player = player
         self._game = None
+        self._root_board = None
 
     def play(self, game):
         """Starts playing a game.
@@ -35,6 +36,7 @@ class Agent(object, metaclass=ABCMeta):
             game: A copy of the game to play on.
         """
         self._game = game
+        self._root_board = game.board.copy()
 
     def update(self, move):
         """Updates game with a given move.
@@ -102,6 +104,7 @@ class AutonomousAgent(Agent):
         """
         super().__init__(player)
         self._heuristics = heuristics
+        self._transposition_table = transposition_table
         self._searcher = AlphaBetaPrunedMinimaxSearch(player, heuristics,
                                                       transposition_table)
 
@@ -112,11 +115,6 @@ class AutonomousAgent(Agent):
             move: Move.
         """
         super().update(move)
-
-        # Learn if lost.
-        winner = self._game.won
-        if winner != Player.none and winner != self.player:
-            self.learn()
 
     def yield_move(self, max_time):
         """Yields a move to play.
@@ -145,6 +143,8 @@ class AutonomousAgent(Agent):
 
         return move
 
-    def learn(self):
+    def learn_from_mistakes(self):
         """Learns from its mistakes."""
-        pass
+        learner = Learner(self._root_board.copy(), self._game.moves,
+                          self._heuristics, self._transposition_table)
+        learner.learn()

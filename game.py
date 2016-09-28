@@ -89,7 +89,6 @@ class GameState(object):
         return GameState(self.board.copy(), self.turn)
 
 
-
 class Game(object):
 
     """A game instance.
