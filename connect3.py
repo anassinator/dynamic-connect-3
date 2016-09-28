@@ -3,9 +3,11 @@
 
 import asyncio
 import argparse
+import itertools
 import heuristics
 import transposition_table
 from base_board import Player
+from collections import Counter
 from heuristics import WeightedHeuristic
 from board import SmallBoard, LargeBoard
 from agent import HumanAgent, AutonomousAgent
@@ -113,6 +115,65 @@ def agent_vs_agent(args):
                               args.learn)
 
 
+def train(args):
+    """Sets up connector to train two agents forever.
+
+    Args:
+        args: Command-line arguments.
+
+    Returns:
+        Game connector.
+    """
+    weighted_heuristics = _get_weighted_heuristics(args)
+    transposition_table = _get_transposition_table(args)
+
+    class TrainingGameConnector(object):
+
+        """Training game connector."""
+
+        @asyncio.coroutine
+        def start(self, board_class):
+            """Starts a game asynchronously.
+
+            Args:
+                board_class: Game board type to start with.
+            """
+            max_time = args.max_time
+            winners = Counter()
+
+            try:
+                for game_num in itertools.count(1):
+                    print("Starting game #{}.".format(game_num))
+                    white_agent = AutonomousAgent(Player.white,
+                                                  weighted_heuristics,
+                                                  transposition_table, False)
+                    black_agent = AutonomousAgent(Player.black,
+                                                  weighted_heuristics,
+                                                  transposition_table, False)
+                    connector = LocalGameConnector(white_agent, black_agent,
+                                                   max_time, args.learn)
+                    yield from connector.start(board_class)
+
+                    winners.update([connector.winner])
+
+                    if connector.winner == Player.none:
+                        max_time += 1
+                        print("Increasing max time to {} seconds."
+                              .format(max_time))
+            except KeyboardInterrupt:
+                print("Played {} games with up to {} seconds per move."
+                      .format(game_num, max_time))
+                for player in winners:
+                    if player == Player.none:
+                        print("Draw: {}".format(winners[player]))
+                    else:
+                        print("{} won:".format(player.name.capitalize(),
+                                               winners[player]))
+                return
+
+    return TrainingGameConnector()
+
+
 def play_vs_remote(args):
     """Sets up connector to play a game vs a remote agent.
 
@@ -179,6 +240,12 @@ def parse_args():
     add_shared_arguments(agents)
     add_agent_arguments(agents)
     agents.set_defaults(func=agent_vs_agent)
+
+    training = subparsers.add_parser("train",
+                                     help="train agents until interrupted")
+    add_shared_arguments(training)
+    add_agent_arguments(training)
+    training.set_defaults(func=train)
 
     # Remote play.
     remote = subparsers.add_parser(

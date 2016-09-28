@@ -94,17 +94,20 @@ class AutonomousAgent(Agent):
         player: Acting player.
     """
 
-    def __init__(self, player, heuristics, transposition_table):
+    def __init__(self, player, heuristics, transposition_table, resigns=True):
         """Constructs an AutonomousAgent.
 
         Args:
             player: Player to play as.
             heuristics: List of weighted heuristics to use.
             transposition_table: Transposition table.
+            resigns: Whether keyboard interrupts should be caught as
+                resignations or not.
         """
         super().__init__(player)
         self._heuristics = heuristics
         self._transposition_table = transposition_table
+        self._resigns = resigns
         self._searcher = AlphaBetaPrunedMinimaxSearch(player, heuristics,
                                                       transposition_table)
 
@@ -136,7 +139,9 @@ class AutonomousAgent(Agent):
         except TimeoutError:
             pass
         except KeyboardInterrupt:
-            raise PlayerResigned
+            if self._resigns:
+                raise PlayerResigned
+            raise KeyboardInterrupt
 
         move = self._searcher.request_move()
         print(move)
