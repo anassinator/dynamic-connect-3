@@ -94,6 +94,9 @@ larger board, and `--max-time N` sets the allocated time for the agent to think
 to `N` seconds.
 More advanced options can be found in `--help`.
 
+The remote server is a simple TCP server that connects two agents on the same
+game ID together and echoes back each other's moves.
+
 ### Training
 
 In order to train your agents, simply run:
