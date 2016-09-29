@@ -8,6 +8,7 @@ from base_board import Player
 from agent import AutonomousAgent
 from heuristics import WeightedHeuristic
 from game_connector import LocalGameConnector
+from search import AlphaBetaPrunedMinimaxSearch
 from transposition_table import PermanentTranspositionTable
 
 
@@ -44,12 +45,13 @@ def perturb(weighted_heuristics, prob):
 
 @asyncio.coroutine
 def play(white_heuristics, black_heuristics, board, max_time):
+    searcher = AlphaBetaPrunedMinimaxSearch
     transposition_table = PermanentTranspositionTable("hill_climber.db")
     white_agent = AutonomousAgent(Player.white, white_heuristics,
-                                  transposition_table)
+                                  transposition_table, searcher, resigns=False)
     black_agent = AutonomousAgent(Player.black, black_heuristics,
-                                  transposition_table)
-    connector = LocalGameConnector(white_agent, black_agent, max_time)
+                                  transposition_table, searcher, resigns=False)
+    connector = LocalGameConnector(white_agent, black_agent, max_time, True)
     yield from connector.start(board)
     return connector.winner
 
